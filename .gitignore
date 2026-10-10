@@ -1,0 +1,18 @@
+# Visual Studio cache and user preferences
+.vs/
+*.user
+*.suo
+
+# Build output directories
+x64/
+x86/
+Debug/
+Release/
+
+# Intermediate compilation artifacts and debug symbols
+*.obj
+*.ilk
+*.pdb
+*.tlog
+*.idb
+*.exe

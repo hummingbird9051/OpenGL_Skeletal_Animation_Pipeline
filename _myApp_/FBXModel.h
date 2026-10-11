@@ -83,6 +83,9 @@ public:
 		glGenBuffers(1, &UboMatrices);
 	}
 
+	// TODO: change into Universal code.
+	// Refactoring plan: Change to texfile const string& and save size also
+	// for safety, need to be changed to for context
 	bool loadDiffuseMap(const char* texFile) override
 	{
 		loadTextureFile(meshesTexture[0], "Subpe_Redhood__head_BaseColor.png");
@@ -245,7 +248,7 @@ public:
 		for (int tick = 0; tick <= static_cast<int>(animDuration); tick++)
 		{
 			uniformBoneMat[tick].assign(boneCount, Identity);
-			calculateBoneTransformRecursicve(static_cast<float>(tick), scene->mRootNode, Identity, uniformBoneMat[tick], globalInverseRootTransform, scene);
+			calculateBoneTransformRecursive(static_cast<float>(tick), scene->mRootNode, Identity, uniformBoneMat[tick], globalInverseRootTransform, scene);
 		}
 
 		//버텍스별 본 가중치와 본 인덱스 값 저장.
@@ -374,6 +377,7 @@ protected:
 
 private:
 	//assimp 라이브러리와 vmath 라이브러리의 행기반 열기반 행렬 변환
+	//TODO: convert to Universal matrix for GLM.
 	mat4 aiMatToVmathMat(aiMatrix4x4 aiMat)
 	{
 		mat4 result;
@@ -388,7 +392,12 @@ private:
 	}
 
 	//재귀로 접근해 하나의 본을 움직이면 다른 본에도 영향을 가도록 만듦.
-	void calculateBoneTransformRecursicve(
+	// TODO: [Animation System & Performance] Remove hardcoded procedural animation (sin math on specific Mixamo bones).
+	// Refactoring plan: 
+	// 1. [Data-Driven] Parse aiAnimation data from the FBX file and interpolate Keyframes (Position/Rotation/Scale) based on tick.
+	// 2. [Performance] Eliminate expensive std::string map lookups (boneNameMap, meshBone) inside this per-frame recursive loop. Replace with flat index arrays.
+	// 3. [Maintenance] Replace aiMatToVmathMat with GLM integration.
+	void calculateBoneTransformRecursive(
 		float tick,const aiNode* pNode, 
 		const mat4& parentGlobalTransform, 
 		vector<mat4>& outFinalBoneMatrices, 
@@ -427,7 +436,7 @@ private:
 
 		for (unsigned int i = 0; i < pNode->mNumChildren; i++)
 		{
-			calculateBoneTransformRecursicve(tick, pNode->mChildren[i], currentGlobalTransform, outFinalBoneMatrices, globalInverseRootTransform, scene);
+			calculateBoneTransformRecursive(tick, pNode->mChildren[i], currentGlobalTransform, outFinalBoneMatrices, globalInverseRootTransform, scene);
 		}
 	}
 };

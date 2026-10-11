@@ -47,6 +47,9 @@ protected:
 
 public:
 	// 생성자
+	// TODO: [Architecture] Anti-pattern: Two-step initialization (Constructor + init()).
+	// Refactoring plan: Merge init() into the constructor to apply RAII pattern.
+	// IMPORTANT: Ensure the model object is instantiated ONLY AFTER the GLFW OpenGL context is fully created.
 	Model() {
 		shininess = 32.f;
 		useDiffuseMap = false;
@@ -55,6 +58,8 @@ public:
 		defaultAmbient = vmath::vec3(1.0f, 1.0f, 1.0f);
 		defaultDiffuse = vmath::vec3(1.0f, 1.0f, 1.0f);
 		defaultSpecular = vmath::vec3(0.0f, 0.0f, 0.0f);
+		// TODO: [Dependency] Remove sb7 legacy math library (vmath::vec3).
+		// Replace all vmath occurrences with industry-standard GLM (glm::vec3).
 	}
 	// 소멸자
 	~Model() {
@@ -79,6 +84,7 @@ public:
 		glGenTextures(1, &specularMap);
 	}
 
+	//change into smart pointer(prevent dangling memories, dangerous leaking)
 	void setupMesh(int _numVertices, GLfloat* _vPositions, GLfloat* _vTexCoords = NULL, GLfloat* _vNormals = NULL) {
 		// 1. copy data from arrays
 		for (int i = 0; i < _numVertices; i++) {
@@ -154,6 +160,8 @@ public:
 
 		glUniform1i(glGetUniformLocation(_shaderID, "useNormal"), (int)vNormals.size());
 		glUniform1f(glGetUniformLocation(_shaderID, "material.shininess"), shininess);
+		//Solve CPU bottle-neck.
+
 
 		if (useDiffuseMap) {
 			glUniform1i(glGetUniformLocation(_shaderID, "material.diffuse"), 0);
@@ -176,7 +184,10 @@ public:
 
 
 	}
-
+	// TODO: [Modern C++] Legacy C-style string parameter (const char*).
+	// Refactoring plan: Upgrade to C++17 std::string_view (or const std::string&) 
+	// for better memory safety and performance. Use .c_str() only when 
+	// interfacing with C-API boundaries like fopen() or Assimp.
 	bool loadOBJ(const char* filepath) {
 		FILE* file = fopen(filepath, "r");
 		if (file == NULL)

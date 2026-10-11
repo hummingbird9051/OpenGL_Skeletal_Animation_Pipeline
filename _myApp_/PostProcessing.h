@@ -1,6 +1,7 @@
 ﻿#pragma once
 #include"Model.h"
 
+
 class PostProcessing
 {
 private:
@@ -93,6 +94,9 @@ public:
 	}
 
 	void drawScreen(GLuint screenShaderProgram, int convolNum)
+		// TODO: [Performance / CPU Bottleneck] glGetUniformLocation is being called every frame inside drawScreen().
+		// Refactoring plan: Move these lookups to the initialization phase and cache the uniform IDs 
+		// to prevent expensive per-frame string searches.
 	{
 		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 		glUseProgram(screenShaderProgram);
@@ -107,7 +111,10 @@ public:
 
 	//화면 크기 재설정시 생기는 오차를 방지
 	void screenResize(int w, int h) {
-		glBindTexture(GL_TEXTURE_2D, fbo);
+		glBindTexture(GL_TEXTURE_2D, texture);
+		// TODO: [Bug Fix] Fix incorrect ID binding in screenResize().
+		// Currently binding 'fbo' to GL_TEXTURE_2D, which causes memory corruption. 
+		// Must change to glBindTexture(GL_TEXTURE_2D, texture).
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, w, h, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
 		glBindTexture(GL_TEXTURE_2D, 0);
 

@@ -10,13 +10,13 @@
 #include "PostProcessing.h"
 
 using namespace std;
-// sb6::application을 상속받는다.
+// sb7::application을 상속받는다.
 class my_application : public sb7::application
 {
 public:
 
 	// 쉐이더 프로그램 컴파일한다.
-	GLuint compile_shader(const char* vs_file, const char* fs_file)
+	GLuint compile_shader(const char* vs_file, const char* fs_file) // Need converting to GLFW, Not SB7
 	{
 		// 버텍스 쉐이더를 생성하고 컴파일한다.
 		GLuint vertex_shader = sb7::shader::load(vs_file, GL_VERTEX_SHADER);
@@ -53,13 +53,13 @@ public:
 		shader_light_program = compile_shader("Light_vs.glsl", "Light_fs.glsl");
 		shader_postprocessing_program = compile_shader("screen_filtering_vs.glsl", "screen_filtering_fs.glsl");
 		// startup() 내부에서 셰이더 컴파일 직후
-		std::cout << "Shader Program ID: " << shader_program << std::endl;
+		/*std::cout << "Shader Program ID: " << shader_program << std::endl;
 		std::cout << "Shader Program ID: " << shader_light_program << std::endl;
-		std::cout << "Shader Program ID: " << shader_postprocessing_program << std::endl;
+		std::cout << "Shader Program ID: " << shader_postprocessing_program << std::endl;*/
 		post->initScreen();
 		post->initFrameBuffer(info.windowWidth, info.windowHeight);
 
-		stbi_set_flip_vertically_on_load(true);
+		stbi_set_flip_vertically_on_load(true); // Do NOT convert this we need to use stb_image.h
 
 		// 첫 번째 객체 정의 : OBJ 모델  --------------------------------------------------
 		objModel->init();
@@ -121,7 +121,8 @@ public:
 		};
 
 		plateModel->init();
-		plateModel->setupMesh(6, plate_verticies, plate_texCoords, plate_normal);
+		plateModel->setupMesh(6, plate_verticies, plate_texCoords, plate_normal); 
+		// If we make new class, use pointer paramiter in place of vector container to reduce Error. For now, we need to input the size of the primitive pointer, and this is dangerous.
 		plateModel->loadDiffuseMap("wall.jpg");
 
 		glEnable(GL_MULTISAMPLE);
@@ -183,7 +184,10 @@ public:
 		glUniform3fv(glGetUniformLocation(shader_program, "light.ambient"), 1, lightAmbient);
 		glUniform3fv(glGetUniformLocation(shader_program, "light.diffuse"), 1, lightDiffuse);
 		glUniform3fv(glGetUniformLocation(shader_program, "light.specular"), 1, lightSpecular);
-
+		// TODO: [Performance / CPU Bottleneck] Severe CPU overhead caused by redundant string lookups (glGetUniformLocation) 
+		// and multiple state changes (4x glUniform calls) per frame inside the render loop.
+		// Refactoring plan: Pack light properties into a single struct and migrate to UBO (Uniform Buffer Object) 
+		// to achieve a single batch upload, drastically reducing CPU-GPU communication costs.
 
 		if (lineMode)
 			glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
@@ -242,6 +246,7 @@ public:
 			}
 			else
 				objModel->draw(shader_program, 0.0f);
+			//Optimize render loop branches by replacing redundant if-else blocks with a ternary operator.
 		}
 
 		glUseProgram(shader_light_program);

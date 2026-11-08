@@ -1,16 +1,16 @@
-﻿#pragma comment(linker, "/entry:WinMainCRTStartup /subsystem:console") 
-// sb7.h 헤더 파일을 포함시킨다
-#include <sb7.h>
+﻿#include<glad/glad.h>
+#include<GLFW/glfw3.h>
+
 #include <vmath.h>
-#include <shader.h>
 
 #include <iostream>
 
-#include "FBXModel.h"
-#include "PostProcessing.h"
+//#include "FBXModel.h"
+//#include "PostProcessing.h"
 
 using namespace std;
 // sb7::application을 상속받는다.
+#if 0 
 class my_application : public sb7::application
 {
 public:
@@ -441,6 +441,53 @@ private:
 	bool keyPressed_S = false;
 
 };
+#endif
 
-// DECLARE_MAIN의 하나뿐인 인스턴스
-DECLARE_MAIN(my_application)
+static void glfwErrorCallback(int error, const char* description) {
+	cerr << "GLFW error" << error << ": " << description << endl;
+}
+
+int main() {
+	glfwSetErrorCallback(glfwErrorCallback);
+
+	if (!glfwInit()) return EXIT_FAILURE;
+
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 5);
+	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+	glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GLFW_TRUE);
+	glfwWindowHint(GLFW_SAMPLES, 16);
+
+	GLFWwindow* window = glfwCreateWindow(600, 400, "Skeletal Animation", nullptr, nullptr);
+	if (!window) {
+		glfwTerminate();
+		return EXIT_FAILURE;
+	}
+
+	glfwMakeContextCurrent(window);
+
+	if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
+		cerr << "Failed to load OpenGL functions" << endl;
+		glfwDestroyWindow(window);
+		glfwTerminate();
+		return EXIT_FAILURE;
+	}
+
+	cout << "OpenGL " << glGetString(GL_VERSION) << endl;
+
+	while (!glfwWindowShouldClose(window)) {
+		int width, height;
+		glfwGetFramebufferSize(window, &width, &height);
+		glViewport(0, 0, width, height);
+
+		glClearColor(0, 0, 0, 1);
+		glClear(GL_COLOR_BUFFER_BIT);
+
+		glfwSwapBuffers(window);
+		glfwPollEvents();
+	}
+
+	glfwDestroyWindow(window);
+	glfwTerminate();
+	return EXIT_SUCCESS;
+}

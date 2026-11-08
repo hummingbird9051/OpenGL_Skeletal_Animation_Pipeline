@@ -1,13 +1,13 @@
 ﻿#ifndef MODEL_H
 #define MODEL_H
 
+#include<glad/glad.h>
 #include <stdio.h>
 #include <string>
 #include <cstring>
 #include <vector>
 #include <map>
 
-#include <sb7.h>
 #include <vmath.h>
 
 #include<assimp/Importer.hpp>

@@ -62,7 +62,7 @@ public:
 		// Replace all vmath occurrences with industry-standard GLM (glm::vec3).
 	}
 	// 소멸자
-	~Model() {
+	virtual ~Model() {
 		glDeleteTextures(1, &diffuseMap);
 		glDeleteTextures(1, &specularMap);
 

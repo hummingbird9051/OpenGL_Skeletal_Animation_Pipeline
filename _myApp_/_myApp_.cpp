@@ -220,6 +220,14 @@ public:
 		glfwMakeContextCurrent(window);
 		info.windowWidth = static_cast<float>(width);
 		info.windowHeight = static_cast<float>(height);
+
+		glfwSetWindowUserPointer(window, this);
+		glfwSetKeyCallback(window, keyCallback);
+		glfwSetMouseButtonCallback(window, mouseButtonCallback);
+		glfwSetCursorPosCallback(window, mousePositionCallback);
+		glfwSetScrollCallback(window, mouseWheelCallback);
+		glfwSetFramebufferSizeCallback(window, onResizeCallback);
+
 		return true;
 	}
 
@@ -231,14 +239,14 @@ public:
 		return glfwWindowShouldClose(window);
 	}
 
-	// 렌더링 virtual 함수를 작성해서 오버라이딩한다.
+	// changed overrided render function
 	void render(double currentTime)
 	{
 		int width, height;
 		glfwGetFramebufferSize(window, &width, &height);
 		glViewport(0, 0, width, height);
 
-		// 카메라 매트릭스 계산
+		// calculating camera matrices
 		float distance = 5.f;
 		//vmath::vec3 eye((float)cos(animationTime*0.3f)*distance, 1.0, (float)sin(animationTime*0.3f)*distance);
 		vmath::vec3 eye(0.0f, 1.0f, distance);
@@ -247,7 +255,7 @@ public:
 		vmath::mat4 lookAt = vmath::lookat(eye, center, up);
 		vmath::mat4 projM = vmath::perspective(fov, info.windowWidth / (float)info.windowHeight, 0.1f, 1000.0f);
 
-		// 라이팅 설정
+		// setting lighting
 		float r = 1.f;
 		vmath::vec3 lightPos = vmath::vec3((float)sin(animationTime * 0.5f) * r, 0.f, (float)cos(animationTime * 0.5f) * r);
 		vmath::vec3 viewPos = eye;
@@ -369,18 +377,27 @@ public:
 		glfwPollEvents();
 	}
 
-	virtual void onResize(float w, float h)
+
+	static void onResizeCallback(GLFWwindow* window, int w, int h) {
+		auto* app = static_cast<my_application*>(glfwGetWindowUserPointer(window));
+		app->onResize(w, h);
+	}
+	void onResize(int w, int h)
 	{
-		info.windowWidth = w;
-		info.windowHeight = h;
+		if (w == 0 && h == 0) return;
+		info.windowWidth = static_cast<float>(w);
+		info.windowHeight = static_cast<float>(h);
 
 		post->screenResize(w, h);
 
-		if (glViewport != NULL)
-			glViewport(0, 0, info.windowWidth, info.windowHeight);
+		glViewport(0, 0, info.windowWidth, info.windowHeight);
 	}
 
-	virtual void onKey(int key, int action)
+	static void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods) {
+		auto* app = static_cast<my_application*>(glfwGetWindowUserPointer(window));
+		app->onKey(key, action);
+	}
+	void onKey(int key, int action)
 	{
 		if (action == GLFW_PRESS) {
 			switch (key) {
@@ -435,10 +452,13 @@ public:
 			if (key == GLFW_KEY_S)
 				keyPressed_S = false;
 		}
-
-
 	}
 
+
+	static void mouseButtonCallback(GLFWwindow* window, int button, int action, int mods) {
+		auto* app = static_cast<my_application*>(glfwGetWindowUserPointer(window));
+		app->onMouseButton(button, action);
+	}
 	void onMouseButton(int button, int action)
 	{
 		if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS)
@@ -447,8 +467,6 @@ public:
 
 			double x, y;
 			glfwGetCursorPos(window, &x, &y);
-
-
 			mousePostion = vmath::vec2(float(x), float(y));
 		}
 		else
@@ -457,6 +475,10 @@ public:
 		}
 	}
 
+	static void mousePositionCallback(GLFWwindow* window, double x, double y) {
+		auto* app = static_cast<my_application*>(glfwGetWindowUserPointer(window));
+		app->onMouseMove(static_cast<int>(x), static_cast<int>(y));
+	}
 	void onMouseMove(int x, int y)
 	{
 		if (mouseDown)
@@ -468,11 +490,17 @@ public:
 
 #define MAX_FOV 120.f
 #define MIN_FOV 10.f
-	void onMouseWheel(int pos)
+
+
+	static void mouseWheelCallback(GLFWwindow* window, double xOffset, double yOffset) {
+		auto* app = static_cast<my_application*>(glfwGetWindowUserPointer(window));
+		app->onMouseWheel(yOffset);
+	}
+	void onMouseWheel(double ypos)
 	{
-		if (pos > 0)
+		if (ypos > 0)
 			fov = vmath::min(MAX_FOV, fov + 1.0f);
-		else
+		else if(ypos < 0)
 			fov = vmath::max(MIN_FOV, fov - 1.0f);
 	}
 

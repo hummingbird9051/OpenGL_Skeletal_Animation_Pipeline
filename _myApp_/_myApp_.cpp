@@ -467,7 +467,7 @@ string readFile(const char* filename) {
 GLuint getShaderFile(const char* filename, GLenum shader_type) {
 	string sSource = readFile(filename);
 	if (sSource == "") {
-		cerr << "Fail to load shaderSource" << endl;
+		cerr << "Fail to load shaderSource (" << filename << ")" << endl;
 		return 0;
 	}
 	GLuint shader = glCreateShader(shader_type);
@@ -492,6 +492,46 @@ GLuint getShaderFile(const char* filename, GLenum shader_type) {
 	}
 	
 	return shader;
+}
+
+GLuint getProgram(const char* vsFile, const char* fsFile) {
+
+	GLuint vs_shader = getShaderFile(vsFile, GL_VERTEX_SHADER);
+	GLuint fs_shader = getShaderFile(fsFile, GL_FRAGMENT_SHADER);
+
+	if (!vs_shader || !fs_shader) {
+		glDeleteShader(fs_shader);
+		glDeleteShader(vs_shader);
+		return 0;
+	}
+
+	GLuint program = glCreateProgram();
+
+	glAttachShader(program, vs_shader);
+	glAttachShader(program, fs_shader);
+
+	glLinkProgram(program);
+
+	glDeleteShader(vs_shader);
+	glDeleteShader(fs_shader);
+
+	GLint isLinkSucceed;
+	glGetProgramiv(program, GL_LINK_STATUS, &isLinkSucceed);
+
+	if (isLinkSucceed == GL_FALSE) {
+		GLint logLength = 0;
+		glGetProgramiv(program, GL_INFO_LOG_LENGTH, &logLength);
+
+		vector<GLchar> log(logLength);
+		glGetProgramInfoLog(program, logLength, nullptr, log.data());
+
+		cerr << "Program Link failed ( " << vsFile << ", " << fsFile << "):\n" << log.data() << endl;
+		glDeleteProgram(program);
+		return 0;
+	}
+
+
+	return program;
 }
 
 int main() {
@@ -522,8 +562,8 @@ int main() {
 
 	cout << "OpenGL " << glGetString(GL_VERSION) << endl;
 
-	GLuint vs = getShaderFile("Model_vs.glsl", GL_VERTEX_SHADER);
-	cout << "VS ID: " << vs << endl;
+	GLuint program = getProgram("Model_vs.glsl", "Model_fs.glsl");
+	cout << "PROGRAM ID : " << program << endl;
 
 	while (!glfwWindowShouldClose(window)) {
 		int width, height;
@@ -537,6 +577,7 @@ int main() {
 		glfwPollEvents();
 	}
 
+	glDeleteProgram(program);
 	glfwDestroyWindow(window);
 	glfwTerminate();
 	return EXIT_SUCCESS;

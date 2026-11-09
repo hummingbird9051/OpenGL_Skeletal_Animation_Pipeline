@@ -4,45 +4,109 @@
 #include<fstream>
 #include<string>
 #include<vector>
+#include<memory>
 
 #include <vmath.h>
 
-//#include "FBXModel.h"
-//#include "PostProcessing.h"
+#include "FBXModel.h"
+#include "PostProcessing.h"
 
 using namespace std;
-// sb7::application을 상속받는다.
-#if 0 
-class my_application : public sb7::application
-{
-public:
 
-	// 쉐이더 프로그램 컴파일한다.
-	GLuint compile_shader(const char* vs_file, const char* fs_file) // Need converting to GLFW, Not SB7
-	{
-		// 버텍스 쉐이더를 생성하고 컴파일한다.
-		GLuint vertex_shader = sb7::shader::load(vs_file, GL_VERTEX_SHADER);
+static void glfwErrorCallback(int error, const char* description) {
+	cerr << "GLFW error" << error << ": " << description << endl;
+}
 
-		// 프래그먼트 쉐이더를 생성하고 컴파일한다.
-		GLuint fragment_shader = sb7::shader::load(fs_file, GL_FRAGMENT_SHADER);
-
-		// 프로그램을 생성하고 쉐이더를 Attach시키고 링크한다.
-		GLuint program = glCreateProgram();
-		glAttachShader(program, vertex_shader);
-		glAttachShader(program, fragment_shader);
-		glLinkProgram(program);
-
-		// 이제 프로그램이 쉐이더를 소유하므로 쉐이더를 삭제한다.
-		glDeleteShader(vertex_shader);
-		glDeleteShader(fragment_shader);
-
-		return program;
+string readFile(const char* filename) {
+	string allLines;
+	string line;
+	ifstream f(filename);
+	if (f.is_open()) {
+		while (getline(f, line)) {
+			allLines.append(line);
+			allLines += '\n';
+		}
 	}
 
-	// 애플리케이션 초기화 수행한다.
-	virtual void startup()
+	else return "";
+	return allLines;
+}
+
+GLuint getShaderFile(const char* filename, GLenum shader_type) {
+	string sSource = readFile(filename);
+	if (sSource == "") {
+		cerr << "Fail to load shaderSource (" << filename << ")" << endl;
+		return 0;
+	}
+	GLuint shader = glCreateShader(shader_type);
+	const char* str = sSource.c_str();
+	GLsizei len = sSource.size();
+
+	glShaderSource(shader, 1, &str, &len);
+	glCompileShader(shader);
+
+	GLint isSucceed;
+	glGetShaderiv(shader, GL_COMPILE_STATUS, &isSucceed);
+	if (isSucceed == GL_FALSE) {
+		GLint logLength = 0;
+		glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &logLength);
+
+		vector<GLchar> log(logLength);
+		glGetShaderInfoLog(shader, logLength, nullptr, log.data());
+
+		cerr << "Shader compile failed (" << filename << "):\n" << log.data() << endl;
+		glDeleteShader(shader);
+		return 0;
+	}
+
+	return shader;
+}
+
+GLuint getProgram(const char* vsFile, const char* fsFile) {
+
+	GLuint vs_shader = getShaderFile(vsFile, GL_VERTEX_SHADER);
+	GLuint fs_shader = getShaderFile(fsFile, GL_FRAGMENT_SHADER);
+
+	if (!vs_shader || !fs_shader) {
+		glDeleteShader(fs_shader);
+		glDeleteShader(vs_shader);
+		return 0;
+	}
+
+	GLuint program = glCreateProgram();
+
+	glAttachShader(program, vs_shader);
+	glAttachShader(program, fs_shader);
+
+	glLinkProgram(program);
+
+	glDeleteShader(vs_shader);
+	glDeleteShader(fs_shader);
+
+	GLint isLinkSucceed;
+	glGetProgramiv(program, GL_LINK_STATUS, &isLinkSucceed);
+
+	if (isLinkSucceed == GL_FALSE) {
+		GLint logLength = 0;
+		glGetProgramiv(program, GL_INFO_LOG_LENGTH, &logLength);
+
+		vector<GLchar> log(logLength);
+		glGetProgramInfoLog(program, logLength, nullptr, log.data());
+
+		cerr << "Program Link failed ( " << vsFile << ", " << fsFile << "):\n" << log.data() << endl;
+		glDeleteProgram(program);
+		return 0;
+	}
+
+
+	return program;
+}
+
+class my_application
+{
+public:
+	void startup()
 	{
-		// 클래스 내부 변수 초기화
 		initValues();
 
 		objModel = new FBXModel();
@@ -51,9 +115,9 @@ public:
 		post = new PostProcessing();
 
 		// 쉐이더 프로그램 컴파일 및 연결
-		shader_program = compile_shader("Model_vs.glsl", "Model_fs.glsl");
-		shader_light_program = compile_shader("Light_vs.glsl", "Light_fs.glsl");
-		shader_postprocessing_program = compile_shader("screen_filtering_vs.glsl", "screen_filtering_fs.glsl");
+		shader_program = getProgram("Model_vs.glsl", "Model_fs.glsl");
+		shader_light_program = getProgram("Light_vs.glsl", "Light_fs.glsl");
+		shader_postprocessing_program = getProgram("screen_filtering_vs.glsl", "screen_filtering_fs.glsl");
 		// startup() 내부에서 셰이더 컴파일 직후
 		/*std::cout << "Shader Program ID: " << shader_program << std::endl;
 		std::cout << "Shader Program ID: " << shader_light_program << std::endl;
@@ -132,21 +196,45 @@ public:
 	}
 
 	// 애플리케이션 끝날 때 호출된다.
-	virtual void shutdown()
+	void shutdown()
 	{
 		glDeleteProgram(shader_program);
 		glDeleteProgram(shader_light_program);
 		glDeleteProgram(shader_postprocessing_program);
-
 		delete objModel;
 		delete pyramidModel;
-		delete post;
+		delete post; 
+		delete plateModel;
 
+
+		glfwDestroyWindow(window);
+	}
+
+	bool setupWindow(int width, int height, const char* windowName) {
+		window = glfwCreateWindow(width, height, "Skeletal Animation", nullptr, nullptr);
+
+		if (!window) return false;
+
+		glfwMakeContextCurrent(window);
+		info.windowWidth = width;
+		info.windowHeight = height;
+		return true;
+	}
+
+	void deleteWindow() {
+		glfwDestroyWindow(window);
+	}
+
+	int windowShouldClose() {
+		return glfwWindowShouldClose(window);
 	}
 
 	// 렌더링 virtual 함수를 작성해서 오버라이딩한다.
-	virtual void render(double currentTime)
+	void render(double currentTime)
 	{
+		int width, height;
+		glfwGetFramebufferSize(window, &width, &height);
+		glViewport(0, 0, width, height);
 
 		// 카메라 매트릭스 계산
 		float distance = 5.f;
@@ -155,7 +243,7 @@ public:
 		vmath::vec3 center(0.0, 0.0, 0.0);
 		vmath::vec3 up(0.0, 1.0, 0.0);
 		vmath::mat4 lookAt = vmath::lookat(eye, center, up);
-		vmath::mat4 projM = vmath::perspective(fov, (float)info.windowWidth / (float)info.windowHeight, 0.1f, 1000.0f);
+		vmath::mat4 projM = vmath::perspective(fov, info.windowWidth / (float)info.windowHeight, 0.1f, 1000.0f);
 
 		// 라이팅 설정
 		float r = 1.f;
@@ -275,24 +363,19 @@ public:
 		post->unbindFrameBuffer();
 		post->drawScreen(shader_postprocessing_program, postConvolNum);
 
+		glfwSwapBuffers(window);
+		glfwPollEvents();
 	}
 
 	virtual void onResize(int w, int h)
 	{
-		sb7::application::onResize(w, h);
+		info.windowWidth = w;
+		info.windowHeight = h;
 
 		post->screenResize(w, h);
 
 		if (glViewport != NULL)
 			glViewport(0, 0, info.windowWidth, info.windowHeight);
-	}
-
-	virtual void init()
-	{
-		sb7::application::init();
-
-		info.samples = 16;
-		info.flags.debug = 1;
 	}
 
 	virtual void onKey(int key, int action)
@@ -354,14 +437,16 @@ public:
 
 	}
 
-	virtual void onMouseButton(int button, int action)
+	void onMouseButton(int button, int action)
 	{
 		if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS)
 		{
 			mouseDown = true;
 
-			int x, y;
-			getMousePosition(x, y);
+			double x, y;
+			glfwGetCursorPos(window, &x, &y);
+
+
 			mousePostion = vmath::vec2(float(x), float(y));
 		}
 		else
@@ -370,7 +455,7 @@ public:
 		}
 	}
 
-	virtual void onMouseMove(int x, int y)
+	void onMouseMove(int x, int y)
 	{
 		if (mouseDown)
 		{
@@ -381,7 +466,7 @@ public:
 
 #define MAX_FOV 120.f
 #define MIN_FOV 10.f
-	virtual void onMouseWheel(int pos)
+	void onMouseWheel(int pos)
 	{
 		if (pos > 0)
 			fov = vmath::min(MAX_FOV, fov + 1.0f);
@@ -442,97 +527,13 @@ private:
 	bool keyPressed_W = false;
 	bool keyPressed_S = false;
 
+	struct WindowInformation {
+		float windowWidth;
+		float windowHeight;
+	} info;
+
+	GLFWwindow* window;
 };
-#endif
-
-static void glfwErrorCallback(int error, const char* description) {
-	cerr << "GLFW error" << error << ": " << description << endl;
-}
-
-string readFile(const char* filename) {
-	string allLines;
-	string line;
-	ifstream f(filename);
-	if (f.is_open()) {
-		while (getline(f, line)) {
-			allLines.append(line);
-			allLines += '\n';
-		}
-	}
-
-	else return "";
-	return allLines;
-}
-
-GLuint getShaderFile(const char* filename, GLenum shader_type) {
-	string sSource = readFile(filename);
-	if (sSource == "") {
-		cerr << "Fail to load shaderSource (" << filename << ")" << endl;
-		return 0;
-	}
-	GLuint shader = glCreateShader(shader_type);
-	const char* str = sSource.c_str();
-	GLsizei len = sSource.size();
-
-	glShaderSource(shader, 1, &str, &len);
-	glCompileShader(shader);
-
-	GLint isSucceed;
-	glGetShaderiv(shader, GL_COMPILE_STATUS, &isSucceed);
-	if (isSucceed == GL_FALSE) {
-		GLint logLength = 0;
-		glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &logLength);
-
-		vector<GLchar> log(logLength);
-		glGetShaderInfoLog(shader, logLength, nullptr, log.data());
-
-		cerr << "Shader compile failed (" << filename << "):\n" << log.data() << endl;
-		glDeleteShader(shader);
-		return 0;
-	}
-	
-	return shader;
-}
-
-GLuint getProgram(const char* vsFile, const char* fsFile) {
-
-	GLuint vs_shader = getShaderFile(vsFile, GL_VERTEX_SHADER);
-	GLuint fs_shader = getShaderFile(fsFile, GL_FRAGMENT_SHADER);
-
-	if (!vs_shader || !fs_shader) {
-		glDeleteShader(fs_shader);
-		glDeleteShader(vs_shader);
-		return 0;
-	}
-
-	GLuint program = glCreateProgram();
-
-	glAttachShader(program, vs_shader);
-	glAttachShader(program, fs_shader);
-
-	glLinkProgram(program);
-
-	glDeleteShader(vs_shader);
-	glDeleteShader(fs_shader);
-
-	GLint isLinkSucceed;
-	glGetProgramiv(program, GL_LINK_STATUS, &isLinkSucceed);
-
-	if (isLinkSucceed == GL_FALSE) {
-		GLint logLength = 0;
-		glGetProgramiv(program, GL_INFO_LOG_LENGTH, &logLength);
-
-		vector<GLchar> log(logLength);
-		glGetProgramInfoLog(program, logLength, nullptr, log.data());
-
-		cerr << "Program Link failed ( " << vsFile << ", " << fsFile << "):\n" << log.data() << endl;
-		glDeleteProgram(program);
-		return 0;
-	}
-
-
-	return program;
-}
 
 int main() {
 	glfwSetErrorCallback(glfwErrorCallback);
@@ -544,41 +545,26 @@ int main() {
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 	glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GLFW_TRUE);
 	glfwWindowHint(GLFW_SAMPLES, 16);
-
-	GLFWwindow* window = glfwCreateWindow(600, 400, "Skeletal Animation", nullptr, nullptr);
-	if (!window) {
+	auto app = make_unique<my_application>();
+	if (!app->setupWindow(600, 400, "Skeletal Animation")) {
 		glfwTerminate();
 		return EXIT_FAILURE;
 	}
-
-	glfwMakeContextCurrent(window);
 
 	if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
 		cerr << "Failed to load OpenGL functions" << endl;
-		glfwDestroyWindow(window);
+		app->deleteWindow();
 		glfwTerminate();
 		return EXIT_FAILURE;
 	}
-
 	cout << "OpenGL " << glGetString(GL_VERSION) << endl;
 
-	GLuint program = getProgram("Model_vs.glsl", "Model_fs.glsl");
-	cout << "PROGRAM ID : " << program << endl;
-
-	while (!glfwWindowShouldClose(window)) {
-		int width, height;
-		glfwGetFramebufferSize(window, &width, &height);
-		glViewport(0, 0, width, height);
-
-		glClearColor(0, 0, 0, 1);
-		glClear(GL_COLOR_BUFFER_BIT);
-
-		glfwSwapBuffers(window);
-		glfwPollEvents();
+	app->startup();
+	while (!app->windowShouldClose()) {
+		app->render(glfwGetTime());
 	}
+	app->shutdown();
 
-	glDeleteProgram(program);
-	glfwDestroyWindow(window);
 	glfwTerminate();
 	return EXIT_SUCCESS;
 }

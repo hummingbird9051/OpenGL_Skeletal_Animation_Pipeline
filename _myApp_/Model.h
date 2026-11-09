@@ -150,7 +150,7 @@ public:
 		return false;
 	}
 
-	virtual void draw(GLuint _shaderID, float currentTime) {
+	virtual void draw(GLuint _shaderID, double currentTime) {
 		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 		glUniform3fv(glGetUniformLocation(_shaderID, "material.defaultAmbient"), 1, defaultAmbient);
 		glUniform3fv(glGetUniformLocation(_shaderID, "material.defaultDiffuse"), 1, defaultDiffuse);

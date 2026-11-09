@@ -268,7 +268,7 @@ public:
 		loadDiffuseMap("");
 	}
 
-	void draw(GLuint _shaderID, float currentTime) override {
+	void draw(GLuint _shaderID, double currentTime) override {
 		glUniform3fv(glGetUniformLocation(_shaderID, "material.defaultAmbient"), 1, defaultAmbient);
 		glUniform3fv(glGetUniformLocation(_shaderID, "material.defaultDiffuse"), 1, defaultDiffuse);
 		glUniform3fv(glGetUniformLocation(_shaderID, "material.defaultSpecular"), 1, defaultSpecular);

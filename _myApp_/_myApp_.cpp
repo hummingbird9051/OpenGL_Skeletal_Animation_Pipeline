@@ -17,7 +17,7 @@ static void glfwErrorCallback(int error, const char* description) {
 	cerr << "GLFW error" << error << ": " << description << endl;
 }
 
-string readFile(const char* filename) {
+string readFile(const char* filename) { //read glsl files with fstream
 	string allLines;
 	string line;
 	ifstream f(filename);
@@ -40,7 +40,7 @@ GLuint getShaderFile(const char* filename, GLenum shader_type) {
 	}
 	GLuint shader = glCreateShader(shader_type);
 	const char* str = sSource.c_str();
-	GLsizei len = sSource.size();
+	GLsizei len = static_cast<GLsizei>(sSource.size());
 
 	glShaderSource(shader, 1, &str, &len);
 	glCompileShader(shader);
@@ -105,10 +105,12 @@ GLuint getProgram(const char* vsFile, const char* fsFile) {
 class my_application
 {
 public:
+	my_application() {
+		initValues();
+	}
+
 	void startup()
 	{
-		initValues();
-
 		objModel = new FBXModel();
 		pyramidModel = new Model();
 		plateModel = new Model();
@@ -216,8 +218,8 @@ public:
 		if (!window) return false;
 
 		glfwMakeContextCurrent(window);
-		info.windowWidth = width;
-		info.windowHeight = height;
+		info.windowWidth = static_cast<float>(width);
+		info.windowHeight = static_cast<float>(height);
 		return true;
 	}
 
@@ -367,7 +369,7 @@ public:
 		glfwPollEvents();
 	}
 
-	virtual void onResize(int w, int h)
+	virtual void onResize(float w, float h)
 	{
 		info.windowWidth = w;
 		info.windowHeight = h;
@@ -495,16 +497,16 @@ public:
 
 
 private:
-	GLuint shader_program;
-	GLuint shader_light_program;
-	GLuint shader_postprocessing_program;
+	GLuint shader_program = 0;
+	GLuint shader_light_program = 0;
+	GLuint shader_postprocessing_program = 0;
 
-	PostProcessing* post;
+	PostProcessing* post = nullptr;
 	GLuint postConvolNum = 0;
 
-	Model* objModel;
-	Model* pyramidModel;
-	Model* plateModel;
+	Model* objModel = nullptr;
+	Model* pyramidModel = nullptr;
+	Model* plateModel = nullptr;
 	vmath::vec3 objPosition;
 	float objYangle;
 
@@ -532,7 +534,7 @@ private:
 		float windowHeight;
 	} info;
 
-	GLFWwindow* window;
+	GLFWwindow* window = nullptr;
 };
 
 int main() {

@@ -1,9 +1,11 @@
 ﻿#include<glad/glad.h>
 #include<GLFW/glfw3.h>
+#include<iostream>
+#include<fstream>
+#include<string>
+#include<vector>
 
 #include <vmath.h>
-
-#include <iostream>
 
 //#include "FBXModel.h"
 //#include "PostProcessing.h"
@@ -447,6 +449,51 @@ static void glfwErrorCallback(int error, const char* description) {
 	cerr << "GLFW error" << error << ": " << description << endl;
 }
 
+string readFile(const char* filename) {
+	string allLines;
+	string line;
+	ifstream f(filename);
+	if (f.is_open()) {
+		while (getline(f, line)) {
+			allLines.append(line);
+			allLines += '\n';
+		}
+	}
+
+	else return "";
+	return allLines;
+}
+
+GLuint getShaderFile(const char* filename, GLenum shader_type) {
+	string sSource = readFile(filename);
+	if (sSource == "") {
+		cerr << "Fail to load shaderSource" << endl;
+		return 0;
+	}
+	GLuint shader = glCreateShader(shader_type);
+	const char* str = sSource.c_str();
+	GLsizei len = sSource.size();
+
+	glShaderSource(shader, 1, &str, &len);
+	glCompileShader(shader);
+
+	GLint isSucceed;
+	glGetShaderiv(shader, GL_COMPILE_STATUS, &isSucceed);
+	if (isSucceed == GL_FALSE) {
+		GLint logLength = 0;
+		glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &logLength);
+
+		vector<GLchar> log(logLength);
+		glGetShaderInfoLog(shader, logLength, nullptr, log.data());
+
+		cerr << "Shader compile failed (" << filename << "):\n" << log.data() << endl;
+		glDeleteShader(shader);
+		return 0;
+	}
+	
+	return shader;
+}
+
 int main() {
 	glfwSetErrorCallback(glfwErrorCallback);
 
@@ -474,6 +521,9 @@ int main() {
 	}
 
 	cout << "OpenGL " << glGetString(GL_VERSION) << endl;
+
+	GLuint vs = getShaderFile("Model_vs.glsl", GL_VERTEX_SHADER);
+	cout << "VS ID: " << vs << endl;
 
 	while (!glfwWindowShouldClose(window)) {
 		int width, height;

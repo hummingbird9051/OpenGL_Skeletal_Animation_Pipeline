@@ -260,9 +260,10 @@ public:
 		vmath::vec3 lightPos = vmath::vec3((float)sin(animationTime * 0.5f) * r, 0.f, (float)cos(animationTime * 0.5f) * r);
 		vmath::vec3 viewPos = eye;
 
-
+		float deltaTime = static_cast<float>(currentTime) - previousTime;
+		if (deltaTime >= 0.1f) deltaTime = 0.1f;
 		if (!pause)
-			animationTime += currentTime - previousTime;
+			animationTime += deltaTime;
 		previousTime = currentTime;
 
 		vmath::vec3 lightAmbient(0.2f, 0.2f, 0.2f);
@@ -302,11 +303,11 @@ public:
 			{
 				if (keyPressed_A)
 				{
-					rotateSpeed = 1.0f;
+					rotateSpeed = deltaTime * 300.0f;
 				}
 				else if (keyPressed_D)
 				{
-					rotateSpeed = -1.0f;
+					rotateSpeed = deltaTime  * (- 300.0f);
 				}
 				else
 				{
@@ -315,11 +316,11 @@ public:
 
 				if (keyPressed_W)
 				{
-					forwardSpeed += 0.001f;
+					forwardSpeed = deltaTime * 3.0f;
 				}
 				else if (keyPressed_S)
 				{
-					forwardSpeed -= 0.001f;
+					forwardSpeed = deltaTime * (-3.0f);
 				}
 				else
 				{

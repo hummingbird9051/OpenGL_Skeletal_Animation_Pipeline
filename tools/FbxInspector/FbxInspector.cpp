@@ -13,7 +13,7 @@ using namespace std;
 int main() {
 	Assimp::Importer ipt; // Assimp Importer variable
 	ipt.SetPropertyBool(AI_CONFIG_IMPORT_FBX_PRESERVE_PIVOTS, false); // Merge $AssimpFbx$ helper nodes (PreRotation, Translation...) into each bone. Skeleton and animation files must use the same setting.
-	const aiScene* scene = ipt.ReadFile("assets/anim/re_RIG_RedHood_3.fbx", 0); // import scene(FBX metadata)
+	const aiScene* scene = ipt.ReadFile("assets/anim/Walking.fbx", 0); // import scene(FBX metadata)
 
 	if (!scene) { // if FBX file is not valid or available, return
 		cout << "Failed to load : " << ipt.GetErrorString() << endl;
@@ -23,6 +23,22 @@ int main() {
 	int countNodes = 0;
 	int countAllBonesReference = 0;
 	int countBones = 0; // need to check amount of Bones, References, Nodes
+	int countAnim = scene->mNumAnimations;
+	cout << "Animation Count : " << countAnim << endl;
+
+	for (int i = 0; i < scene->mNumAnimations; i++) {
+		aiAnimation* anim = scene->mAnimations[i];
+		int duration = anim->mDuration;
+		cout << "Durations : " << duration << endl;
+		cout << "Ticks Per Seconds : " << anim->mTicksPerSecond << endl;
+		for(int ch = 0; ch < anim->mNumChannels; ch++) {
+			aiNodeAnim* channel = anim->mChannels[ch];
+			cout << "Channel : " << ch << ", Name : " << channel->mNodeName.C_Str() << endl;
+			cout << "  Animation Channel's PositionKeys Counts : " << channel->mNumPositionKeys << endl;
+			cout << "  Animation Channel's RotationKeys Counts : " << channel->mNumRotationKeys << endl;
+			cout << "  Animation Channel's ScalingKeys Counts : " << channel->mNumScalingKeys << endl;
+		}
+	}
 
 	unordered_map<string, int> bones; // bone name -> number of meshes that reference it (skinning bones only)
 	for (int i = 0; i < scene->mNumMeshes; i++) {

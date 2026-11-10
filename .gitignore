@@ -9,6 +9,8 @@ x86/
 Debug/
 Release/
 
+!extern/**/x64/
+
 # Intermediate compilation artifacts and debug symbols
 *.obj
 *.ilk

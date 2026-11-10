@@ -1,13 +1,13 @@
 ﻿#ifndef MODEL_H
 #define MODEL_H
 
+#include<glad/glad.h>
 #include <stdio.h>
 #include <string>
 #include <cstring>
 #include <vector>
 #include <map>
 
-#include <sb7.h>
 #include <vmath.h>
 
 #include<assimp/Importer.hpp>
@@ -150,7 +150,7 @@ public:
 		return false;
 	}
 
-	virtual void draw(GLuint _shaderID, float currentTime) {
+	virtual void draw(GLuint _shaderID, double currentTime) {
 		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 		glUniform3fv(glGetUniformLocation(_shaderID, "material.defaultAmbient"), 1, defaultAmbient);
 		glUniform3fv(glGetUniformLocation(_shaderID, "material.defaultDiffuse"), 1, defaultDiffuse);
@@ -188,106 +188,6 @@ public:
 	// Refactoring plan: Upgrade to C++17 std::string_view (or const std::string&) 
 	// for better memory safety and performance. Use .c_str() only when 
 	// interfacing with C-API boundaries like fopen() or Assimp.
-	bool loadOBJ(const char* filepath) {
-		FILE* file = fopen(filepath, "r");
-		if (file == NULL)
-			return false;
-
-		bool readVT = false, readVN = false;
-
-		std::vector<vmath::vec3> tmpPositions;
-		std::vector<vmath::vec2> tmpTexCoords;
-		std::vector<vmath::vec3> tmpNormals;
-		std::vector<GLuint> tmpVIndices, tmpVtIndices, tmpVnIndices;
-
-		while (true) {
-			char lineBuffer[512];
-
-			// 처음 한 단어 읽어오기
-			int res = fscanf(file, "%s", lineBuffer);
-			// 파일 끝이면 읽기 종료
-			if (res == EOF)
-				break;
-
-			// 버텍스 3차원 포지션 읽어오기
-			if (strcmp(lineBuffer, "v") == 0) {
-				vmath::vec3 v;
-				fscanf(file, "%f %f %f\n", &v[0], &v[1], &v[2]);
-				tmpPositions.push_back(v);
-			}
-			// 버텍스 텍스처 좌표 읽어오기
-			else if (strcmp(lineBuffer, "vt") == 0) {
-				vmath::vec2 vt;
-				fscanf(file, "%f %f\n", &vt[0], &vt[1]);
-				tmpTexCoords.push_back(vt);
-				readVT = true;
-			}
-			// 버텍스 노말 읽어오기
-			else if (strcmp(lineBuffer, "vn") == 0) {
-				vmath::vec3 vn;
-				fscanf(file, "%f %f %f\n", &vn[0], &vn[1], &vn[2]);
-				tmpNormals.push_back(vn);
-				readVN = true;
-			}
-			// 페이스 인덱스들 읽어오기
-			else if (strcmp(lineBuffer, "f") == 0) {
-				GLuint vIndex[3], vtIndex[3], vnIndex[3];
-
-				// 포지션만 있는 경우
-				if (!readVT && !readVN) {
-					fscanf(file, "%d %d %d\n", &vIndex[0], &vIndex[1], &vIndex[2]);
-				}
-				// 포지션/텍스쳐좌표 있는 경우
-				else if (readVT && !readVN) {
-					fscanf(file, "%d/%d %d/%d %d/%d\n", &vIndex[0], &vtIndex[0], &vIndex[1], &vtIndex[1], &vIndex[2], &vtIndex[2]);
-				}
-				// 포지션/노멀 있는 경우
-				else if (!readVT && readVN) {
-					fscanf(file, "%d//%d %d//%d %d//%d\n", &vIndex[0], &vnIndex[0], &vIndex[1], &vnIndex[1], &vIndex[2], &vnIndex[2]);
-				}
-				// 포지션/텍스쳐좌표/노멀 있는 경우
-				else if (readVT && readVN) {
-					fscanf(file, "%d/%d/%d %d/%d/%d %d/%d/%d\n", &vIndex[0], &vtIndex[0], &vnIndex[0], &vIndex[1], &vtIndex[1], &vnIndex[1], &vIndex[2], &vtIndex[2], &vnIndex[2]);
-				}
-
-				for (int i = 0; i < 3; i++) {
-					tmpVIndices.push_back(vIndex[i]);
-					if (readVT)
-						tmpVtIndices.push_back(vtIndex[i]);
-					if (readVN)
-						tmpVnIndices.push_back(vnIndex[i]);
-				}
-			}
-			else {
-				char trashBuffer[1000];
-				fgets(trashBuffer, 1000, file);
-			}
-
-		}
-
-		vPositions.clear();
-		vTexCoords.clear();
-		vNormals.clear();
-		vIndices.clear();
-		// 인덱스를 사용하지는 않고 그냥 중첩해서 정보를 저장 (OpenGL EBO는 단일 인덱스밖에 지원하지 않으므로...)
-		for (int i = 0; i < tmpVIndices.size(); i++) {
-			vmath::vec3 position = tmpPositions[tmpVIndices[i] - 1];
-			vPositions.push_back(position);
-		}
-		for (int i = 0; i < tmpVtIndices.size(); i++) {
-			vmath::vec2 texCoords = tmpTexCoords[tmpVtIndices[i] - 1];
-			vTexCoords.push_back(texCoords);
-		}
-		for (int i = 0; i < tmpVnIndices.size(); i++) {
-			vmath::vec3 normal = tmpNormals[tmpVnIndices[i] - 1];
-			vNormals.push_back(normal);
-		}
-
-		prepareBuffers();
-
-		return true;
-	}
-
 	virtual void loadFBX(const char* objectFileName, const char* animationFileName = nullptr){ }
 
 protected:

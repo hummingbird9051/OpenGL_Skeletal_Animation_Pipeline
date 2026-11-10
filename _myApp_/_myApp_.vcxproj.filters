@@ -18,6 +18,9 @@
     <ClCompile Include="_myApp_.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
+    <ClCompile Include="..\extern\glad\src\glad.c">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Image Include="Subpe_Redhood__Cloths_BaseColor.png">

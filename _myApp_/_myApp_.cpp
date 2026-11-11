@@ -131,7 +131,7 @@ public:
 
 		// 첫 번째 객체 정의 : OBJ 모델  --------------------------------------------------
 		objModel->init();
-		objModel->loadFBX("../assets/anim/re_RIG_RedHood_3.fbx");
+		objModel->loadFBX("../assets/anim/Walking.fbx");
 
 		// 두 번째 객체 정의 : 피라미드 --------------------------------------------------
 		// 피라미드 점들의 위치와 컬러, 텍스처 좌표를 정의한다.

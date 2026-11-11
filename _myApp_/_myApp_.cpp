@@ -5,7 +5,7 @@
 #include<string>
 #include<vector>
 #include<memory>
-
+#include<glm/glm.hpp>
 #include <vmath.h>
 
 #include "FBXModel.h"

@@ -8,6 +8,7 @@
 #include <vector>
 #include <map>
 #include <unordered_map>
+#include <algorithm>
 
 #include <vmath.h>
 #include <glm/glm.hpp>

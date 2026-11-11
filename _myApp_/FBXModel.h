@@ -70,7 +70,7 @@ private:
 	vector<string> boneName;
 	map<string, int> boneNameMap;
 
-	double animDuration;
+	double sampleCount;
 
 	vector<vector<mat4>> uniformBoneMat;
 
@@ -302,17 +302,19 @@ public:
 		}
 
 		//프레임 인터폴레이션 기술 사용 실패로 프레임 자체를 늘려 사용
-		animDuration = 258;
+		sampleCount = 258;
 		aiMatrix4x4 invRootTransformAssimp = scene->mRootNode->mTransformation;
 		invRootTransformAssimp = invRootTransformAssimp.Inverse();
 		mat4 globalInverseRootTransform = aiMatToVmathMat(invRootTransformAssimp);
 		uniformBoneMat.clear();
-		uniformBoneMat.resize(static_cast<size_t>(animDuration) + 1);
+		uniformBoneMat.resize(static_cast<size_t>(sampleCount) + 1);
 
-		for (int tick = 0; tick <= static_cast<int>(animDuration); tick++)
+		for (int i = 0; i < static_cast<int>(sampleCount); i++)
 		{
-			uniformBoneMat[tick].assign(boneCount, Identity);
-			calculateBoneTransformRecursive(static_cast<float>(tick), scene->mRootNode, Identity, uniformBoneMat[tick], globalInverseRootTransform, scene);
+			double tick = static_cast<double>(i) / sampleCount * animations[0].duration;
+			cout << tick << endl;
+			uniformBoneMat[i].assign(boneCount, Identity);
+			calculateBoneTransformRecursive(static_cast<float>(tick), scene->mRootNode, Identity, uniformBoneMat[i], globalInverseRootTransform, scene);
 		}
 
 		//버텍스별 본 가중치와 본 인덱스 값 저장.
@@ -340,14 +342,14 @@ public:
 		glUniform1i(glGetUniformLocation(_shaderID, "material.useSpecularMap"), (int)useSpecularMap);
 
 		//UBO 오프셋 설정
-		int tick = 0;
-		if (animDuration > 0)
+		int sampleId = 0;
+		if (sampleCount > 0 && !animations.empty()) 
 		{
-			float normalizedTime = fmod(currentTime * 258, animDuration);
-			tick = static_cast<int>(normalizedTime);
+			double animTick = fmod(currentTime * animations[0].tickperSec, animations[0].duration);
+			sampleId = static_cast<int>(sampleCount / animations[0].duration * animTick);
 		}
 		glBindBuffer(GL_UNIFORM_BUFFER, UboMatrices);
-		glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(mat4) * uniformBoneMat[tick].size(), uniformBoneMat[tick].data());
+		glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(mat4) * uniformBoneMat[sampleId].size(), uniformBoneMat[sampleId].data());
 
 		glBindBuffer(GL_UNIFORM_BUFFER, 0);
 
@@ -470,23 +472,23 @@ private:
 	{
 		string nodeName = pNode->mName.C_Str();
 		mat4 localNodeTransform;
-		mat4 R = Identity;
-		int boneMappedIndex = boneNameMap[nodeName];
+		glm::mat4 T;
+		glm::mat4 R;
+		glm::mat4 S;
+		int tickIdx = static_cast<int>(tick);
 
-		if (nodeName == "mixamorig:RightUpLeg")
-			R = rotate(static_cast<float>(20.0f * sin(tick / 40)), 1.0f, 0.0f, 0.0f);
-		if (nodeName == "mixamorig:LeftUpLeg")
-			R = rotate(static_cast<float>(-20.0f * sin(tick / 40)), 1.0f, 0.0f, 0.0f);
-		if (nodeName == "mixamorig:LeftArm")
-			R =  rotate(-70.0f, -1.0f, 0.0f, 0.0f) * rotate(static_cast<float>(10.0f * sin(tick / 40)), 0.0f, 0.0f, 1.0f);
-		if (nodeName == "mixamorig:RightArm")
-			R = rotate(70.0f, 1.0f, 0.0f, 0.0f) * rotate(static_cast<float>(10.0f * sin(tick / 40)), 0.0f, 0.0f, 1.0f);
-		if (nodeName == "mixamorig:LeftForeArm")
-			R = rotate(10.0f * (static_cast<float>(sin(tick / 40)) + 0.5f), 0.0f, 0.0f, 1.0f);
-		if (nodeName == "mixamorig:RightForeArm")
-			R = rotate(10.0f * (static_cast<float>(sin(tick / 40)) + 0.5f), 0.0f, 0.0f, 1.0f);
-		localNodeTransform = aiMatToVmathMat(pNode->mTransformation) * R;
-
+		// Assumes one key per integer tick (true for Mixamo baked clips). Replace with time-based search when adding interpolation.
+		auto it = animations[0].channelIndexByName.find(nodeName);
+		if (it != animations[0].channelIndexByName.end()) {
+			Animation::Channel& channel = animations[0].channels[it->second];
+			//Need to check size of each keys cause if the keys value are all the same, they made just one.
+			T = glm::translate(glm::mat4(1.0f), channel.positionKeys[std::min(static_cast<int>(channel.positionKeys.size()) - 1, tickIdx)].value);
+			R = glm::mat4_cast(channel.rotationKeys[std::min(static_cast<int>(channel.rotationKeys.size()) - 1, tickIdx)].value);
+			S = glm::scale(glm::mat4(1.0f), channel.scalingKeys[std::min(static_cast<int>(channel.scalingKeys.size()) - 1, tickIdx)].value);
+			localNodeTransform = glmMatToVmathMat(T * R * S);
+		}
+		else localNodeTransform = aiMatToVmathMat(pNode->mTransformation);
+		
 		mat4 currentGlobalTransform = parentGlobalTransform * localNodeTransform;
 		
 		if (meshBone.count(nodeName))
@@ -502,5 +504,16 @@ private:
 		{
 			calculateBoneTransformRecursive(tick, pNode->mChildren[i], currentGlobalTransform, outFinalBoneMatrices, globalInverseRootTransform, scene);
 		}
+	}
+
+	mat4 glmMatToVmathMat(glm::mat4 g) {
+		mat4 temp;
+		for (int col = 0; col < 4; col++) {
+			for (int row = 0; row < 4; row++) {
+				temp[col][row] = g[col][row];
+			}
+		}
+
+		return temp;
 	}
 };

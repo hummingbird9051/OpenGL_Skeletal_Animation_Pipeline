@@ -110,6 +110,7 @@ public:
 			aiProcess_FindInvalidData |
 			aiProcess_FindDegenerates |
 			aiProcess_ImproveCacheLocality;
+		objectImporter.SetPropertyBool(AI_CONFIG_IMPORT_FBX_PRESERVE_PIVOTS, false);
 		const aiScene* scene = objectImporter.ReadFile(objectFileName, flags);
 		if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode)
 		{

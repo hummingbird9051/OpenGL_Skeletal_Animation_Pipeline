@@ -22,6 +22,29 @@ struct VertexBoneData
 class FBXModel : public Model
 {
 private:
+	struct Animation {
+		struct Channel {
+			struct VectorKey {
+				double time;
+				glm::vec3 value;
+			};
+			struct QuaternionKey {
+				double time;
+				glm::quat value;
+			};
+
+			string name;
+			vector<VectorKey> positionKeys;
+			vector<QuaternionKey> rotationKeys;
+			vector<VectorKey> scalingKeys;
+		};
+		double duration;
+		double tickperSec;
+		vector<Channel> channels;
+		unordered_map<string, int> channelIndexByName;
+	};
+
+	vector<Animation> animations;
 
 	vector<GLuint> meshesVAO;
 	vector<GLuint> meshesVBOPosition;
@@ -121,23 +144,24 @@ public:
 		map<string, int> tmpBoneNameMap;
 		int boneCounter{ 0 };
 
+		//Collect Mesh Information
 		boneDataMesh.resize(scene->mNumMeshes);
 		for (int meshIdx = 0; meshIdx < scene->mNumMeshes; meshIdx++)
 		{
 			const aiMesh* mesh = scene->mMeshes[meshIdx];
-			// 정점 데이터(노멀 벡터 포함)
 			vector<vmath::vec3> tmpPositions;
 			vector<vmath::vec2> tmpTexCoords;
 			vector<vmath::vec3> tmpNormals;
 			vector<GLuint> tmpVIndices;
 			vector<VertexBoneData> tmpBoneData;
-			
+
 
 			vector<vmath::vec3> meshPositions;
 			vector<vmath::vec2> meshTexCoords;
 			vector<vmath::vec3> meshNormals;
 
 			//cout << mesh->mName.C_Str() << std::endl;
+			//collect vertex information
 			tmpBoneData.resize(mesh->mNumVertices);
 			for (unsigned i = 0; i < mesh->mNumVertices; ++i)
 			{
@@ -166,7 +190,7 @@ public:
 			}
 
 
-			//FBX는 정점 정보, 노말 정보, 텍스쳐 좌표정보 등이 다 인덱스로 매핑 되어있음.
+
 			for (unsigned i = 0; i < mesh->mNumFaces; ++i)
 			{
 				const aiFace& face = mesh->mFaces[i];
@@ -184,7 +208,7 @@ public:
 			positionMesh.push_back(meshPositions);
 			normalMesh.push_back(meshNormals);
 			texCoordMesh.push_back(meshTexCoords);
-			
+
 
 			meshesVAO.push_back(0);
 			meshesVBOPosition.push_back(0);
@@ -223,20 +247,59 @@ public:
 					currentBoneData.weight.push_back(0.0f);
 				}
 				while (currentBoneData.boneIndex.size() < 4) {
-					currentBoneData.boneIndex.push_back(0); 
+					currentBoneData.boneIndex.push_back(0);
 				}
 				boneDataMesh[meshIdx].push_back(currentBoneData);
 			}
 
 		}
 
-		cout << boneName.size() << endl;
+		//cout << boneName.size() << endl;
 		boneNameMap.clear();
 		for (int i = 0; i < boneName.size(); i++)
 		{
 			boneNameMap[boneName[i]] = i;
 		}
 		boneCount = boneName.size();
+
+		//Collect Animation informaiton
+		animations.resize(scene->mNumAnimations);
+		for (int animIdx = 0; animIdx < scene->mNumAnimations; animIdx++) {
+			aiAnimation* anim = scene->mAnimations[animIdx];
+			Animation& animation = animations[animIdx];
+			animation.duration = anim->mDuration;
+			animation.tickperSec = anim->mTicksPerSecond;
+			animation.channels.resize(static_cast<size_t>(anim->mNumChannels));
+			//collect by channel
+			for (int ch = 0; ch < anim->mNumChannels; ch++) {
+				aiNodeAnim* nodeAnim = anim->mChannels[ch];
+				//collecting information by keys
+				animation.channels[ch].name = nodeAnim->mNodeName.C_Str();
+				animation.channelIndexByName[nodeAnim->mNodeName.C_Str()] = ch; // collect node name with channel number
+				animation.channels[ch].positionKeys.resize(nodeAnim->mNumPositionKeys);
+				animation.channels[ch].rotationKeys.resize(nodeAnim->mNumRotationKeys);
+				animation.channels[ch].scalingKeys.resize(nodeAnim->mNumScalingKeys);
+				for (int posKey = 0; posKey < nodeAnim->mNumPositionKeys; posKey++) {
+					animation.channels[ch].positionKeys[posKey].value.x = nodeAnim->mPositionKeys[posKey].mValue.x;
+					animation.channels[ch].positionKeys[posKey].value.y = nodeAnim->mPositionKeys[posKey].mValue.y;
+					animation.channels[ch].positionKeys[posKey].value.z = nodeAnim->mPositionKeys[posKey].mValue.z;
+					animation.channels[ch].positionKeys[posKey].time = nodeAnim->mPositionKeys[posKey].mTime;
+				}
+				for (int rotKey = 0; rotKey < nodeAnim->mNumRotationKeys; rotKey++) {
+					animation.channels[ch].rotationKeys[rotKey].value.w = nodeAnim->mRotationKeys[rotKey].mValue.w;
+					animation.channels[ch].rotationKeys[rotKey].value.x = nodeAnim->mRotationKeys[rotKey].mValue.x;
+					animation.channels[ch].rotationKeys[rotKey].value.y = nodeAnim->mRotationKeys[rotKey].mValue.y;
+					animation.channels[ch].rotationKeys[rotKey].value.z = nodeAnim->mRotationKeys[rotKey].mValue.z;
+					animation.channels[ch].rotationKeys[rotKey].time = nodeAnim->mRotationKeys[rotKey].mTime;
+				}
+				for (int scaleKey = 0; scaleKey < nodeAnim->mNumScalingKeys; scaleKey++) {
+					animation.channels[ch].scalingKeys[scaleKey].value.x = nodeAnim->mScalingKeys[scaleKey].mValue.x;
+					animation.channels[ch].scalingKeys[scaleKey].value.y = nodeAnim->mScalingKeys[scaleKey].mValue.y;
+					animation.channels[ch].scalingKeys[scaleKey].value.z = nodeAnim->mScalingKeys[scaleKey].mValue.z;
+					animation.channels[ch].scalingKeys[scaleKey].time = nodeAnim->mScalingKeys[scaleKey].mTime;
+				}
+			}
+		}
 
 		//프레임 인터폴레이션 기술 사용 실패로 프레임 자체를 늘려 사용
 		animDuration = 258;

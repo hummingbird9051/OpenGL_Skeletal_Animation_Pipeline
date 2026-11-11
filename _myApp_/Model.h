@@ -7,8 +7,11 @@
 #include <cstring>
 #include <vector>
 #include <map>
+#include <unordered_map>
 
 #include <vmath.h>
+#include <glm/glm.hpp>
+#include <glm/gtc/quaternion.hpp>
 
 #include<assimp/Importer.hpp>
 #include<assimp/scene.h>

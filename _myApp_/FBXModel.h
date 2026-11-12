@@ -464,7 +464,7 @@ private:
 	// 2. [Performance] Eliminate expensive std::string map lookups (boneNameMap, meshBone) inside this per-frame recursive loop. Replace with flat index arrays.
 	// 3. [Maintenance] Replace aiMatToVmathMat with GLM integration.
 	void calculateBoneTransformRecursive(
-		float tick,const aiNode* pNode, 
+		double tick,const aiNode* pNode, 
 		const mat4& parentGlobalTransform, 
 		vector<mat4>& outFinalBoneMatrices, 
 		const mat4& globalInverseRootTransform, 
@@ -475,16 +475,15 @@ private:
 		glm::mat4 T;
 		glm::mat4 R;
 		glm::mat4 S;
-		int tickIdx = static_cast<int>(tick);
 
 		// Assumes one key per integer tick (true for Mixamo baked clips). Replace with time-based search when adding interpolation.
 		auto it = animations[0].channelIndexByName.find(nodeName);
 		if (it != animations[0].channelIndexByName.end()) {
 			Animation::Channel& channel = animations[0].channels[it->second];
 			//Need to check size of each keys cause if the keys value are all the same, they made just one.
-			T = glm::translate(glm::mat4(1.0f), channel.positionKeys[std::min(static_cast<int>(channel.positionKeys.size()) - 1, tickIdx)].value);
-			R = glm::mat4_cast(channel.rotationKeys[std::min(static_cast<int>(channel.rotationKeys.size()) - 1, tickIdx)].value);
-			S = glm::scale(glm::mat4(1.0f), channel.scalingKeys[std::min(static_cast<int>(channel.scalingKeys.size()) - 1, tickIdx)].value);
+			T = glm::translate(glm::mat4(1.0f), pickKey(channel.positionKeys, tick));
+			R = glm::mat4_cast(pickKey(channel.rotationKeys, tick));
+			S = glm::scale(glm::mat4(1.0f), pickKey(channel.scalingKeys, tick));
 			localNodeTransform = glmMatToVmathMat(T * R * S);
 		}
 		else localNodeTransform = aiMatToVmathMat(pNode->mTransformation);
@@ -515,5 +514,45 @@ private:
 		}
 
 		return temp;
+	}
+
+	/*template <typename KeyT>
+	const auto& pickKey(const vector<KeyT> keys, double tickTime, int duration) {
+		int idx = std::min(static_cast<int>(keys.size() - 1), static_cast<int>(tickTime));
+		return keys[idx].value;
+	}*/
+
+	glm::vec3 pickKey(const vector<Animation::Channel::VectorKey>& keys, double tickTime) {
+		if (tickTime > keys[keys.size() - 1].time) return keys[keys.size() - 1].value;
+		else if (tickTime < keys[0].time) return keys[0].value;
+		if (keys.size() == 1) {
+			return keys[0].value;
+		}
+		int left = 0;
+		int right = keys.size() - 1;
+		while ((left + 1 <= keys.size() - 1 && right - 1 >= 0) && (right - left != 1)) {
+			if (keys[left + 1].time <= tickTime) left++;
+			if (keys[right - 1].time > tickTime) right--;
+		}
+		
+		double portion = (tickTime - keys[left].time) / (keys[right].time - keys[left].time);
+		return glm::mix(keys[left].value, keys[right].value, static_cast<float>(portion));
+	}
+
+	glm::quat pickKey(const vector<Animation::Channel::QuaternionKey>& keys, double tickTime) {
+		if (tickTime > keys[keys.size() - 1].time) return keys[keys.size() - 1].value;
+		else if (tickTime < keys[0].time) return keys[0].value;
+		if (keys.size() == 1) {
+			return keys[0].value;
+		}
+		int left = 0;
+		int right = keys.size() - 1;
+		while ((left + 1 <= keys.size() - 1 && right - 1 >= 0) && right - left != 1) {
+			if (keys[left + 1].time <= tickTime) left++;
+			if (keys[right - 1].time > tickTime) right--;
+		}
+
+		double portion = (tickTime - keys[left].time) / (keys[right].time - keys[left].time);
+		return glm::slerp(keys[left].value, keys[right].value, static_cast<float>(portion));
 	}
 };

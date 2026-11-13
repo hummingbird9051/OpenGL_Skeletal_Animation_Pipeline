@@ -83,6 +83,44 @@ private:
 	vector<string> boneName;
 	map<string, int> boneNameMap;
 
+	void loadAnimation(const aiAnimation* anim) {
+		Animation animation;
+		animation.duration = anim->mDuration;
+		animation.tickperSec = anim->mTicksPerSecond > 0.0 ? anim->mTicksPerSecond : 25.0;
+		animation.channels.resize(static_cast<size_t>(anim->mNumChannels));
+		//collect by channel
+		for (int ch = 0; ch < anim->mNumChannels; ch++) {
+			aiNodeAnim* nodeAnim = anim->mChannels[ch];
+			//collecting information by keys
+			animation.channels[ch].name = nodeAnim->mNodeName.C_Str();
+			animation.channelIndexByName[nodeAnim->mNodeName.C_Str()] = ch; // collect node name with channel number
+			animation.channels[ch].positionKeys.resize(nodeAnim->mNumPositionKeys);
+			animation.channels[ch].rotationKeys.resize(nodeAnim->mNumRotationKeys);
+			animation.channels[ch].scalingKeys.resize(nodeAnim->mNumScalingKeys);
+			for (int posKey = 0; posKey < nodeAnim->mNumPositionKeys; posKey++) {
+				animation.channels[ch].positionKeys[posKey].value.x = nodeAnim->mPositionKeys[posKey].mValue.x;
+				animation.channels[ch].positionKeys[posKey].value.y = nodeAnim->mPositionKeys[posKey].mValue.y;
+				animation.channels[ch].positionKeys[posKey].value.z = nodeAnim->mPositionKeys[posKey].mValue.z;
+				animation.channels[ch].positionKeys[posKey].time = nodeAnim->mPositionKeys[posKey].mTime;
+			}
+			for (int rotKey = 0; rotKey < nodeAnim->mNumRotationKeys; rotKey++) {
+				animation.channels[ch].rotationKeys[rotKey].value.w = nodeAnim->mRotationKeys[rotKey].mValue.w;
+				animation.channels[ch].rotationKeys[rotKey].value.x = nodeAnim->mRotationKeys[rotKey].mValue.x;
+				animation.channels[ch].rotationKeys[rotKey].value.y = nodeAnim->mRotationKeys[rotKey].mValue.y;
+				animation.channels[ch].rotationKeys[rotKey].value.z = nodeAnim->mRotationKeys[rotKey].mValue.z;
+				animation.channels[ch].rotationKeys[rotKey].time = nodeAnim->mRotationKeys[rotKey].mTime;
+			}
+			for (int scaleKey = 0; scaleKey < nodeAnim->mNumScalingKeys; scaleKey++) {
+				animation.channels[ch].scalingKeys[scaleKey].value.x = nodeAnim->mScalingKeys[scaleKey].mValue.x;
+				animation.channels[ch].scalingKeys[scaleKey].value.y = nodeAnim->mScalingKeys[scaleKey].mValue.y;
+				animation.channels[ch].scalingKeys[scaleKey].value.z = nodeAnim->mScalingKeys[scaleKey].mValue.z;
+				animation.channels[ch].scalingKeys[scaleKey].time = nodeAnim->mScalingKeys[scaleKey].mTime;
+			}
+		}
+
+		animations.push_back(animation);
+	}
+
 public:
 	FBXModel() : Model() {}
 
@@ -131,9 +169,10 @@ public:
 		return true;
 	}
 
-	void loadFBX(const char* objectFileName, const char* animationFileName = nullptr) override
+	void loadFBX(string objectFileName, vector<string> animationFileName) override
 	{
 		Assimp::Importer objectImporter;
+		Assimp::Importer animationImporter;
 		unsigned int flags = aiProcess_GenSmoothNormals |
 			aiProcess_CalcTangentSpace |
 			aiProcess_SortByPType |
@@ -143,10 +182,11 @@ public:
 			aiProcess_FindDegenerates |
 			aiProcess_ImproveCacheLocality;
 		objectImporter.SetPropertyBool(AI_CONFIG_IMPORT_FBX_PRESERVE_PIVOTS, false);
-		const aiScene* scene = objectImporter.ReadFile(objectFileName, flags);
+		animationImporter.SetPropertyBool(AI_CONFIG_IMPORT_FBX_PRESERVE_PIVOTS, false);
+		const aiScene* scene = objectImporter.ReadFile(objectFileName.c_str(), flags);
 		if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode)
 		{
-			cerr << "Assimp Error: " << objectImporter.GetErrorString() << std::endl;
+			cerr << "FBX Object Import Error: " << objectImporter.GetErrorString() << std::endl;
 			return;
 		}
 
@@ -276,44 +316,28 @@ public:
 		invRootTransformAssimp = invRootTransformAssimp.Inverse();
 		globalInverseRootTransform = aiMatToVmathMat(invRootTransformAssimp);
 
-		//Collect Animation informaiton
-		animations.resize(scene->mNumAnimations);
+		//Collect Animation informaiton from FBX Bone file
 		for (int animIdx = 0; animIdx < scene->mNumAnimations; animIdx++) {
-			aiAnimation* anim = scene->mAnimations[animIdx];
-			Animation& animation = animations[animIdx];
-			animation.duration = anim->mDuration;
-			animation.tickperSec = anim->mTicksPerSecond >= 0.0 ? anim->mTicksPerSecond : 25.0;
-			animation.channels.resize(static_cast<size_t>(anim->mNumChannels));
-			//collect by channel
-			for (int ch = 0; ch < anim->mNumChannels; ch++) {
-				aiNodeAnim* nodeAnim = anim->mChannels[ch];
-				//collecting information by keys
-				animation.channels[ch].name = nodeAnim->mNodeName.C_Str();
-				animation.channelIndexByName[nodeAnim->mNodeName.C_Str()] = ch; // collect node name with channel number
-				animation.channels[ch].positionKeys.resize(nodeAnim->mNumPositionKeys);
-				animation.channels[ch].rotationKeys.resize(nodeAnim->mNumRotationKeys);
-				animation.channels[ch].scalingKeys.resize(nodeAnim->mNumScalingKeys);
-				for (int posKey = 0; posKey < nodeAnim->mNumPositionKeys; posKey++) {
-					animation.channels[ch].positionKeys[posKey].value.x = nodeAnim->mPositionKeys[posKey].mValue.x;
-					animation.channels[ch].positionKeys[posKey].value.y = nodeAnim->mPositionKeys[posKey].mValue.y;
-					animation.channels[ch].positionKeys[posKey].value.z = nodeAnim->mPositionKeys[posKey].mValue.z;
-					animation.channels[ch].positionKeys[posKey].time = nodeAnim->mPositionKeys[posKey].mTime;
-				}
-				for (int rotKey = 0; rotKey < nodeAnim->mNumRotationKeys; rotKey++) {
-					animation.channels[ch].rotationKeys[rotKey].value.w = nodeAnim->mRotationKeys[rotKey].mValue.w;
-					animation.channels[ch].rotationKeys[rotKey].value.x = nodeAnim->mRotationKeys[rotKey].mValue.x;
-					animation.channels[ch].rotationKeys[rotKey].value.y = nodeAnim->mRotationKeys[rotKey].mValue.y;
-					animation.channels[ch].rotationKeys[rotKey].value.z = nodeAnim->mRotationKeys[rotKey].mValue.z;
-					animation.channels[ch].rotationKeys[rotKey].time = nodeAnim->mRotationKeys[rotKey].mTime;
-				}
-				for (int scaleKey = 0; scaleKey < nodeAnim->mNumScalingKeys; scaleKey++) {
-					animation.channels[ch].scalingKeys[scaleKey].value.x = nodeAnim->mScalingKeys[scaleKey].mValue.x;
-					animation.channels[ch].scalingKeys[scaleKey].value.y = nodeAnim->mScalingKeys[scaleKey].mValue.y;
-					animation.channels[ch].scalingKeys[scaleKey].value.z = nodeAnim->mScalingKeys[scaleKey].mValue.z;
-					animation.channels[ch].scalingKeys[scaleKey].time = nodeAnim->mScalingKeys[scaleKey].mTime;
-				}
+			loadAnimation(scene->mAnimations[animIdx]);
+		}
+
+		// ..from Another Animation file
+		for (int fileCount = 0; fileCount < animationFileName.size(); fileCount++) {
+			const aiScene* animScene = animationImporter.ReadFile(animationFileName[fileCount].c_str(), flags);
+			if (!animScene)
+			{
+				cerr << animationFileName[fileCount] << " : Animation Import Error: " << animationImporter.GetErrorString() << std::endl;
+				continue;
+			}
+			if (animScene->mNumAnimations == 0) {
+				cerr << animationFileName[fileCount] << " : No animation found" << endl;
+				continue;
+			}
+			for (int animIdx = 0; animIdx < animScene->mNumAnimations; animIdx++) {
+				loadAnimation(animScene->mAnimations[animIdx]);
 			}
 		}
+		
 
 
 		//Saving Bone weigh and indices each vertex

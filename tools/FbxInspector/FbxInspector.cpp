@@ -13,7 +13,7 @@ using namespace std;
 int main() {
 	Assimp::Importer ipt; // Assimp Importer variable
 	ipt.SetPropertyBool(AI_CONFIG_IMPORT_FBX_PRESERVE_PIVOTS, false); // Merge $AssimpFbx$ helper nodes (PreRotation, Translation...) into each bone. Skeleton and animation files must use the same setting.
-	const aiScene* scene = ipt.ReadFile("assets/anim/Walking.fbx", 0); // import scene(FBX metadata)
+	const aiScene* scene = ipt.ReadFile("assets/anim/Idle.fbx", 0); // import scene(FBX metadata)
 
 	if (!scene) { // if FBX file is not valid or available, return
 		cout << "Failed to load : " << ipt.GetErrorString() << endl;
@@ -25,7 +25,7 @@ int main() {
 	int countBones = 0; // need to check amount of Bones, References, Nodes
 	int countAnim = scene->mNumAnimations;
 	cout << "Animation Count : " << countAnim << endl;
-	/*
+	
 	//animation print
 	for (int i = 0; i < scene->mNumAnimations; i++) {
 		aiAnimation* anim = scene->mAnimations[i];
@@ -66,7 +66,6 @@ int main() {
 		if (maxDifferenceCh < 0.001)  cout << "Seamless" << endl;
 		else cout << "not Seamless" << endl;
 	}
-	*/
 
 	
 	//bone print

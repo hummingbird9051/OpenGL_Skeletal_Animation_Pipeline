@@ -192,7 +192,7 @@ public:
 	// Refactoring plan: Upgrade to C++17 std::string_view (or const std::string&) 
 	// for better memory safety and performance. Use .c_str() only when 
 	// interfacing with C-API boundaries like fopen() or Assimp.
-	virtual void loadFBX(const char* objectFileName, const char* animationFileName = nullptr){ }
+	virtual void loadFBX(std::string objectFileName, std::vector<std::string> animationFileName) {}
 
 protected:
 	virtual void prepareBuffers() {

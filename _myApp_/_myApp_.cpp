@@ -245,6 +245,7 @@ public:
 		int width, height;
 		glfwGetFramebufferSize(window, &width, &height);
 		glViewport(0, 0, width, height);
+		double deltaTime = currentTime - previousTime;
 
 		// calculating camera matrices
 		float distance = 5.f;
@@ -259,11 +260,9 @@ public:
 		float r = 1.f;
 		vmath::vec3 lightPos = vmath::vec3((float)sin(animationTime * 0.5f) * r, 0.f, (float)cos(animationTime * 0.5f) * r);
 		vmath::vec3 viewPos = eye;
-		float deltaTime = static_cast<float>(currentTime) - static_cast<float>(previousTime);
-		if (deltaTime >= 0.1f) deltaTime = 0.1f;
+		if (deltaTime >= 0.1) deltaTime = 0.1;
 		if (!pause)
 			animationTime += deltaTime;
-		previousTime = currentTime;
 
 		vmath::vec3 lightAmbient(0.2f, 0.2f, 0.2f);
 		vmath::vec3 lightDiffuse(0.5f, 0.5f, 0.5f);
@@ -294,7 +293,7 @@ public:
 		else
 			glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
-		//모델이 그려지는동안 위치 이동( pause상태가 아닐 때)
+		//moving while drawing(Not the pause statement)
 		if (drawModel) {
 			float rotateSpeed = 0.0f;
 			float forwardSpeed = 0.0f;
@@ -302,11 +301,11 @@ public:
 			{
 				if (keyPressed_A)
 				{
-					rotateSpeed = deltaTime * 300.0f;
+					rotateSpeed = static_cast<float>(deltaTime) * 300.0f;
 				}
 				else if (keyPressed_D)
 				{
-					rotateSpeed = deltaTime  * (- 300.0f);
+					rotateSpeed = static_cast<float>(deltaTime) * (- 300.0f);
 				}
 				else
 				{
@@ -315,11 +314,11 @@ public:
 
 				if (keyPressed_W)
 				{
-					forwardSpeed = deltaTime * 3.0f;
+					forwardSpeed = static_cast<float>(deltaTime) * 3.0f;
 				}
 				else if (keyPressed_S)
 				{
-					forwardSpeed = deltaTime * (-3.0f);
+					forwardSpeed = static_cast<float>(deltaTime) * (-3.0f);
 				}
 				else
 				{
@@ -337,16 +336,9 @@ public:
 				vmath::scale(0.01f);
 
 			glUniformMatrix4fv(glGetUniformLocation(shader_program, "model"), 1, GL_FALSE, model);
-			if (!pause)
-			{
-				if (keyPressed_W || keyPressed_S)
-					objModel->draw(shader_program, currentTime);
-				else
-					objModel->draw(shader_program, 0.0f);
-			}
-			else
-				objModel->draw(shader_program, 0.0f);
-			//Optimize render loop branches by replacing redundant if-else blocks with a ternary operator.
+			
+			modelTime = !pause && (keyPressed_W || keyPressed_S) ? modelTime + deltaTime : modelTime;
+			objModel->draw(shader_program, modelTime);
 		}
 
 		glUseProgram(shader_light_program);
@@ -373,6 +365,8 @@ public:
 		post->unbindFrameBuffer();
 		post->drawScreen(shader_postprocessing_program, postConvolNum);
 
+
+		previousTime = currentTime;
 		glfwSwapBuffers(window);
 		glfwPollEvents();
 	}
@@ -384,7 +378,7 @@ public:
 	}
 	void onResize(int w, int h)
 	{
-		if (w == 0 && h == 0) return;
+		if (w == 0 || h == 0) return;
 		info.windowWidth = static_cast<float>(w);
 		info.windowHeight = static_cast<float>(h);
 
@@ -510,6 +504,7 @@ public:
 		drawLight = true;
 		pause = false;
 		animationTime = 0;
+		modelTime = 0;
 		previousTime = 0;
 		lineMode = false;
 
@@ -543,6 +538,7 @@ private:
 	bool pause;
 	double previousTime;
 	double animationTime;
+	double modelTime;
 
 
 	vmath::vec2 mousePostion;

@@ -44,7 +44,16 @@ private:
 		unordered_map<string, int> channelIndexByName;
 	};
 
+	struct SkeletonBone {
+		string name;
+		glm::mat4 localBindTransform;
+		int parent;
+		vector<int> children;
+	};
+
 	vector<Animation> animations;
+
+	vector<SkeletonBone> nodes;
 
 	vector<GLuint> meshesVAO;
 	vector<GLuint> meshesVBOPosition;
@@ -262,6 +271,10 @@ public:
 		}
 		boneCount = boneName.size();
 
+		//refactor: Bone data saving(from scene)
+		nodes.clear();
+		saveBoneData(scene->mRootNode, 0);
+
 		//Collect Animation informaiton
 		animations.resize(scene->mNumAnimations);
 		for (int animIdx = 0; animIdx < scene->mNumAnimations; animIdx++) {
@@ -312,9 +325,8 @@ public:
 		for (int i = 0; i < static_cast<int>(sampleCount); i++)
 		{
 			double tick = static_cast<double>(i) / sampleCount * animations[0].duration;
-			cout << tick << endl;
 			uniformBoneMat[i].assign(boneCount, Identity);
-			calculateBoneTransformRecursive(static_cast<float>(tick), scene->mRootNode, Identity, uniformBoneMat[i], globalInverseRootTransform, scene);
+			calculateBoneTransformRecursive(tick, 0, Identity, uniformBoneMat[i], globalInverseRootTransform);
 		}
 
 		//버텍스별 본 가중치와 본 인덱스 값 저장.
@@ -464,29 +476,27 @@ private:
 	// 2. [Performance] Eliminate expensive std::string map lookups (boneNameMap, meshBone) inside this per-frame recursive loop. Replace with flat index arrays.
 	// 3. [Maintenance] Replace aiMatToVmathMat with GLM integration.
 	void calculateBoneTransformRecursive(
-		double tick,const aiNode* pNode, 
+		double tick, int nodeIdx, 
 		const mat4& parentGlobalTransform, 
 		vector<mat4>& outFinalBoneMatrices, 
-		const mat4& globalInverseRootTransform, 
-		const aiScene* scene)
+		const mat4& globalInverseRootTransform)
 	{
-		string nodeName = pNode->mName.C_Str();
+		string nodeName = nodes[nodeIdx].name;
 		mat4 localNodeTransform;
 		glm::mat4 T;
 		glm::mat4 R;
 		glm::mat4 S;
 
-		// Assumes one key per integer tick (true for Mixamo baked clips). Replace with time-based search when adding interpolation.
+		// Channel found: build the local transform from interpolated keys. Otherwise use the bind pose.
 		auto it = animations[0].channelIndexByName.find(nodeName);
 		if (it != animations[0].channelIndexByName.end()) {
 			Animation::Channel& channel = animations[0].channels[it->second];
-			//Need to check size of each keys cause if the keys value are all the same, they made just one.
 			T = glm::translate(glm::mat4(1.0f), pickKey(channel.positionKeys, tick));
 			R = glm::mat4_cast(pickKey(channel.rotationKeys, tick));
 			S = glm::scale(glm::mat4(1.0f), pickKey(channel.scalingKeys, tick));
 			localNodeTransform = glmMatToVmathMat(T * R * S);
 		}
-		else localNodeTransform = aiMatToVmathMat(pNode->mTransformation);
+		else localNodeTransform = glmMatToVmathMat(nodes[nodeIdx].localBindTransform);
 		
 		mat4 currentGlobalTransform = parentGlobalTransform * localNodeTransform;
 		
@@ -499,9 +509,9 @@ private:
 			}
 		}
 
-		for (unsigned int i = 0; i < pNode->mNumChildren; i++)
+		for (unsigned int i = 0; i < nodes[nodeIdx].children.size(); i++)
 		{
-			calculateBoneTransformRecursive(tick, pNode->mChildren[i], currentGlobalTransform, outFinalBoneMatrices, globalInverseRootTransform, scene);
+			calculateBoneTransformRecursive(tick, nodes[nodeIdx].children[i], currentGlobalTransform, outFinalBoneMatrices, globalInverseRootTransform);
 		}
 	}
 
@@ -514,6 +524,34 @@ private:
 		}
 
 		return temp;
+	}
+
+	int saveBoneData(const aiNode* cur, int parentInfo) {
+		if (!cur) return -1;
+		SkeletonBone temp;
+		temp.name = cur->mName.C_Str();
+		temp.parent = parentInfo;
+		temp.localBindTransform = aiMatToGlmMat(cur->mTransformation);
+		nodes.push_back(std::move(temp));
+		int currInfo = nodes.size() - 1;
+		for (int i = 0; i < cur->mNumChildren; i++) {
+			int childrenInfo = saveBoneData(cur->mChildren[i], currInfo);
+			if (childrenInfo >= 0) nodes[currInfo].children.push_back(childrenInfo);
+		}
+		return currInfo;
+	}
+
+	glm::mat4 aiMatToGlmMat(aiMatrix4x4 aiMat)
+	{
+		glm::mat4 result;
+		for (int i = 0; i < 4; i++)
+		{
+			for (int j = 0; j < 4; j++)
+			{
+				result[j][i] = aiMat[i][j];
+			}
+		}
+		return result;
 	}
 
 	/*template <typename KeyT>

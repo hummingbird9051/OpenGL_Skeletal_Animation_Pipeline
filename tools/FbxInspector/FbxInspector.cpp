@@ -25,7 +25,7 @@ int main() {
 	int countBones = 0; // need to check amount of Bones, References, Nodes
 	int countAnim = scene->mNumAnimations;
 	cout << "Animation Count : " << countAnim << endl;
-
+	/*
 	//animation print
 	for (int i = 0; i < scene->mNumAnimations; i++) {
 		aiAnimation* anim = scene->mAnimations[i];
@@ -66,8 +66,9 @@ int main() {
 		if (maxDifferenceCh < 0.001)  cout << "Seamless" << endl;
 		else cout << "not Seamless" << endl;
 	}
+	*/
 
-	/*
+	
 	//bone print
 	unordered_map<string, int> bones; // bone name -> number of meshes that reference it (skinning bones only)
 	for (int i = 0; i < scene->mNumMeshes; i++) {
@@ -107,5 +108,5 @@ int main() {
 	cout << "BoneCounts : " << countBones << endl;
 	
 	
-	*/
+	
 }

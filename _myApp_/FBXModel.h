@@ -1,6 +1,7 @@
 ﻿#pragma once
 #include <iostream>
 #include<map>
+#include<filesystem>
 #include "Model.h"
 
 using namespace std;
@@ -52,6 +53,7 @@ private:
 	};
 
 	vector<Animation> animations;
+	unordered_map<string, int> findAnimation;
 
 	vector<SkeletonBone> nodes;
 
@@ -83,42 +85,57 @@ private:
 	vector<string> boneName;
 	map<string, int> boneNameMap;
 
-	void loadAnimation(const aiAnimation* anim) {
-		Animation animation;
-		animation.duration = anim->mDuration;
-		animation.tickperSec = anim->mTicksPerSecond > 0.0 ? anim->mTicksPerSecond : 25.0;
-		animation.channels.resize(static_cast<size_t>(anim->mNumChannels));
-		//collect by channel
-		for (int ch = 0; ch < anim->mNumChannels; ch++) {
-			aiNodeAnim* nodeAnim = anim->mChannels[ch];
-			//collecting information by keys
-			animation.channels[ch].name = nodeAnim->mNodeName.C_Str();
-			animation.channelIndexByName[nodeAnim->mNodeName.C_Str()] = ch; // collect node name with channel number
-			animation.channels[ch].positionKeys.resize(nodeAnim->mNumPositionKeys);
-			animation.channels[ch].rotationKeys.resize(nodeAnim->mNumRotationKeys);
-			animation.channels[ch].scalingKeys.resize(nodeAnim->mNumScalingKeys);
-			for (int posKey = 0; posKey < nodeAnim->mNumPositionKeys; posKey++) {
-				animation.channels[ch].positionKeys[posKey].value.x = nodeAnim->mPositionKeys[posKey].mValue.x;
-				animation.channels[ch].positionKeys[posKey].value.y = nodeAnim->mPositionKeys[posKey].mValue.y;
-				animation.channels[ch].positionKeys[posKey].value.z = nodeAnim->mPositionKeys[posKey].mValue.z;
-				animation.channels[ch].positionKeys[posKey].time = nodeAnim->mPositionKeys[posKey].mTime;
-			}
-			for (int rotKey = 0; rotKey < nodeAnim->mNumRotationKeys; rotKey++) {
-				animation.channels[ch].rotationKeys[rotKey].value.w = nodeAnim->mRotationKeys[rotKey].mValue.w;
-				animation.channels[ch].rotationKeys[rotKey].value.x = nodeAnim->mRotationKeys[rotKey].mValue.x;
-				animation.channels[ch].rotationKeys[rotKey].value.y = nodeAnim->mRotationKeys[rotKey].mValue.y;
-				animation.channels[ch].rotationKeys[rotKey].value.z = nodeAnim->mRotationKeys[rotKey].mValue.z;
-				animation.channels[ch].rotationKeys[rotKey].time = nodeAnim->mRotationKeys[rotKey].mTime;
-			}
-			for (int scaleKey = 0; scaleKey < nodeAnim->mNumScalingKeys; scaleKey++) {
-				animation.channels[ch].scalingKeys[scaleKey].value.x = nodeAnim->mScalingKeys[scaleKey].mValue.x;
-				animation.channels[ch].scalingKeys[scaleKey].value.y = nodeAnim->mScalingKeys[scaleKey].mValue.y;
-				animation.channels[ch].scalingKeys[scaleKey].value.z = nodeAnim->mScalingKeys[scaleKey].mValue.z;
-				animation.channels[ch].scalingKeys[scaleKey].time = nodeAnim->mScalingKeys[scaleKey].mTime;
-			}
+	int loadAnimation(const aiScene* scene, string originalFileName) {
+		if (scene->mNumAnimations == 0) {
+			return 0;
 		}
-
-		animations.push_back(animation);
+		string filename = std::filesystem::path(originalFileName).filename().stem().string();
+		int putCount = 0;
+		for (int animIdx = 0; animIdx < scene->mNumAnimations; animIdx++) {
+			if (findAnimation.count(filename + "_" + to_string(animIdx)) != 0) {
+				cerr << "There's " << filename << " animation already" << endl;
+				continue;
+			}
+			const aiAnimation* anim = scene->mAnimations[animIdx];
+			Animation animation;
+			animation.duration = anim->mDuration;
+			animation.tickperSec = anim->mTicksPerSecond > 0.0 ? anim->mTicksPerSecond : 25.0;
+			animation.channels.resize(static_cast<size_t>(anim->mNumChannels));
+			//collect by channel
+			for (int ch = 0; ch < anim->mNumChannels; ch++) {
+				aiNodeAnim* nodeAnim = anim->mChannels[ch];
+				//collecting information by keys
+				animation.channels[ch].name = nodeAnim->mNodeName.C_Str();
+				animation.channelIndexByName[nodeAnim->mNodeName.C_Str()] = ch; // collect node name with channel number
+				animation.channels[ch].positionKeys.resize(nodeAnim->mNumPositionKeys);
+				animation.channels[ch].rotationKeys.resize(nodeAnim->mNumRotationKeys);
+				animation.channels[ch].scalingKeys.resize(nodeAnim->mNumScalingKeys);
+				for (int posKey = 0; posKey < nodeAnim->mNumPositionKeys; posKey++) {
+					animation.channels[ch].positionKeys[posKey].value.x = nodeAnim->mPositionKeys[posKey].mValue.x;
+					animation.channels[ch].positionKeys[posKey].value.y = nodeAnim->mPositionKeys[posKey].mValue.y;
+					animation.channels[ch].positionKeys[posKey].value.z = nodeAnim->mPositionKeys[posKey].mValue.z;
+					animation.channels[ch].positionKeys[posKey].time = nodeAnim->mPositionKeys[posKey].mTime;
+				}
+				for (int rotKey = 0; rotKey < nodeAnim->mNumRotationKeys; rotKey++) {
+					animation.channels[ch].rotationKeys[rotKey].value.w = nodeAnim->mRotationKeys[rotKey].mValue.w;
+					animation.channels[ch].rotationKeys[rotKey].value.x = nodeAnim->mRotationKeys[rotKey].mValue.x;
+					animation.channels[ch].rotationKeys[rotKey].value.y = nodeAnim->mRotationKeys[rotKey].mValue.y;
+					animation.channels[ch].rotationKeys[rotKey].value.z = nodeAnim->mRotationKeys[rotKey].mValue.z;
+					animation.channels[ch].rotationKeys[rotKey].time = nodeAnim->mRotationKeys[rotKey].mTime;
+				}
+				for (int scaleKey = 0; scaleKey < nodeAnim->mNumScalingKeys; scaleKey++) {
+					animation.channels[ch].scalingKeys[scaleKey].value.x = nodeAnim->mScalingKeys[scaleKey].mValue.x;
+					animation.channels[ch].scalingKeys[scaleKey].value.y = nodeAnim->mScalingKeys[scaleKey].mValue.y;
+					animation.channels[ch].scalingKeys[scaleKey].value.z = nodeAnim->mScalingKeys[scaleKey].mValue.z;
+					animation.channels[ch].scalingKeys[scaleKey].time = nodeAnim->mScalingKeys[scaleKey].mTime;
+				}
+			}
+			
+			animations.push_back(std::move(animation));
+			findAnimation[filename + "_" + to_string(animIdx)] = animations.size() - 1;
+			putCount++;
+		}
+		return putCount;
 	}
 
 public:
@@ -189,6 +206,7 @@ public:
 			cerr << "FBX Object Import Error: " << objectImporter.GetErrorString() << std::endl;
 			return;
 		}
+
 
 		//Collect Mesh Information
 		boneDataMesh.resize(scene->mNumMeshes);
@@ -317,9 +335,7 @@ public:
 		globalInverseRootTransform = aiMatToVmathMat(invRootTransformAssimp);
 
 		//Collect Animation informaiton from FBX Bone file
-		for (int animIdx = 0; animIdx < scene->mNumAnimations; animIdx++) {
-			loadAnimation(scene->mAnimations[animIdx]);
-		}
+		if (loadAnimation(scene, objectFileName) == 0) cerr << objectFileName << " : No animation found" << endl;
 
 		// ..from Another Animation file
 		for (int fileCount = 0; fileCount < animationFileName.size(); fileCount++) {
@@ -329,12 +345,8 @@ public:
 				cerr << animationFileName[fileCount] << " : Animation Import Error: " << animationImporter.GetErrorString() << std::endl;
 				continue;
 			}
-			if (animScene->mNumAnimations == 0) {
+			if (loadAnimation(animScene, animationFileName[fileCount]) == 0) {
 				cerr << animationFileName[fileCount] << " : No animation found" << endl;
-				continue;
-			}
-			for (int animIdx = 0; animIdx < animScene->mNumAnimations; animIdx++) {
-				loadAnimation(animScene->mAnimations[animIdx]);
 			}
 		}
 		

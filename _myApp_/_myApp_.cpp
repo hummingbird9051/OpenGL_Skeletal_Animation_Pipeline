@@ -125,7 +125,7 @@ public:
 		std::cout << "Shader Program ID: " << shader_light_program << std::endl;
 		std::cout << "Shader Program ID: " << shader_postprocessing_program << std::endl;*/
 		post->initScreen();
-		post->initFrameBuffer(info.windowWidth, info.windowHeight);
+		post->initFrameBuffer(static_cast<int>(info.windowWidth), static_cast<int>(info.windowHeight));
 
 		stbi_set_flip_vertically_on_load(true); // Do NOT convert this we need to use stb_image.h
 
@@ -259,8 +259,7 @@ public:
 		float r = 1.f;
 		vmath::vec3 lightPos = vmath::vec3((float)sin(animationTime * 0.5f) * r, 0.f, (float)cos(animationTime * 0.5f) * r);
 		vmath::vec3 viewPos = eye;
-
-		float deltaTime = static_cast<float>(currentTime) - previousTime;
+		float deltaTime = static_cast<float>(currentTime) - static_cast<float>(previousTime);
 		if (deltaTime >= 0.1f) deltaTime = 0.1f;
 		if (!pause)
 			animationTime += deltaTime;
@@ -391,7 +390,7 @@ public:
 
 		post->screenResize(w, h);
 
-		glViewport(0, 0, info.windowWidth, info.windowHeight);
+		glViewport(0, 0, static_cast<GLsizei>(info.windowWidth), static_cast<GLsizei>(info.windowHeight));
 	}
 
 	static void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods) {

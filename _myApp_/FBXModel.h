@@ -38,16 +38,16 @@ private:
 			vector<QuaternionKey> rotationKeys;
 			vector<VectorKey> scalingKeys;
 		};
-		double duration;
-		double tickperSec;
+		double duration = 0.0;
+		double tickperSec = 0.0;
 		vector<Channel> channels;
 		unordered_map<string, int> channelIndexByName;
 	};
 
 	struct SkeletonBone {
 		string name;
-		glm::mat4 localBindTransform;
-		int parent;
+		glm::mat4 localBindTransform = glm::mat4(1.0f);
+		int parent = 0;
 		vector<int> children;
 	};
 

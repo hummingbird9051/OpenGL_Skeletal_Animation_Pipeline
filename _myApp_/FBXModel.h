@@ -47,13 +47,17 @@ private:
 	struct SkeletonBone {
 		string name;
 		glm::mat4 localBindTransform = glm::mat4(1.0f);
-		int parent = 0;
+		int parent = -1;
 		vector<int> children;
 	};
 
 	vector<Animation> animations;
 
 	vector<SkeletonBone> nodes;
+
+	mat4 globalInverseRootTransform;
+
+	vector<mat4> currentBoneMatrices; //save bone matrices each frame
 
 	vector<GLuint> meshesVAO;
 	vector<GLuint> meshesVBOPosition;
@@ -78,10 +82,6 @@ private:
 
 	vector<string> boneName;
 	map<string, int> boneNameMap;
-
-	double sampleCount;
-
-	vector<vector<mat4>> uniformBoneMat;
 
 public:
 	FBXModel() : Model() {}
@@ -149,9 +149,6 @@ public:
 			cerr << "Assimp Error: " << objectImporter.GetErrorString() << std::endl;
 			return;
 		}
-
-		map<string, int> tmpBoneNameMap;
-		int boneCounter{ 0 };
 
 		//Collect Mesh Information
 		boneDataMesh.resize(scene->mNumMeshes);
@@ -272,8 +269,12 @@ public:
 		boneCount = boneName.size();
 
 		//refactor: Bone data saving(from scene)
+		currentBoneMatrices.assign(boneCount, Identity);
 		nodes.clear();
-		saveBoneData(scene->mRootNode, 0);
+		saveBoneData(scene->mRootNode, -1);
+		aiMatrix4x4 invRootTransformAssimp = scene->mRootNode->mTransformation;
+		invRootTransformAssimp = invRootTransformAssimp.Inverse();
+		globalInverseRootTransform = aiMatToVmathMat(invRootTransformAssimp);
 
 		//Collect Animation informaiton
 		animations.resize(scene->mNumAnimations);
@@ -281,7 +282,7 @@ public:
 			aiAnimation* anim = scene->mAnimations[animIdx];
 			Animation& animation = animations[animIdx];
 			animation.duration = anim->mDuration;
-			animation.tickperSec = anim->mTicksPerSecond;
+			animation.tickperSec = anim->mTicksPerSecond >= 0.0 ? anim->mTicksPerSecond : 25.0;
 			animation.channels.resize(static_cast<size_t>(anim->mNumChannels));
 			//collect by channel
 			for (int ch = 0; ch < anim->mNumChannels; ch++) {
@@ -314,22 +315,8 @@ public:
 			}
 		}
 
-		//프레임 인터폴레이션 기술 사용 실패로 프레임 자체를 늘려 사용
-		sampleCount = 258;
-		aiMatrix4x4 invRootTransformAssimp = scene->mRootNode->mTransformation;
-		invRootTransformAssimp = invRootTransformAssimp.Inverse();
-		mat4 globalInverseRootTransform = aiMatToVmathMat(invRootTransformAssimp);
-		uniformBoneMat.clear();
-		uniformBoneMat.resize(static_cast<size_t>(sampleCount) + 1);
 
-		for (int i = 0; i < static_cast<int>(sampleCount); i++)
-		{
-			double tick = static_cast<double>(i) / sampleCount * animations[0].duration;
-			uniformBoneMat[i].assign(boneCount, Identity);
-			calculateBoneTransformRecursive(tick, 0, Identity, uniformBoneMat[i], globalInverseRootTransform);
-		}
-
-		//버텍스별 본 가중치와 본 인덱스 값 저장.
+		//Saving Bone weigh and indices each vertex
 		for (int meshIdx = 0; meshIdx < boneDataMesh.size(); meshIdx++)
 		{
 			for (int meshVertex = 0; meshVertex < boneDataMesh[meshIdx].size(); meshVertex++)
@@ -353,15 +340,16 @@ public:
 		glUniform1i(glGetUniformLocation(_shaderID, "material.useDiffuseMap"), (int)useDiffuseMap);
 		glUniform1i(glGetUniformLocation(_shaderID, "material.useSpecularMap"), (int)useSpecularMap);
 
-		//UBO 오프셋 설정
-		int sampleId = 0;
-		if (sampleCount > 0 && !animations.empty()) 
-		{
-			double animTick = fmod(currentTime * animations[0].tickperSec, animations[0].duration);
-			sampleId = static_cast<int>(sampleCount / animations[0].duration * animTick);
+		//calculate final bon matrices each frame
+		if (!animations.empty()) {
+			double tick = fmod(currentTime * animations[0].tickperSec, animations[0].duration);
+			currentBoneMatrices.assign(boneCount, Identity);
+			calculateBoneTransformRecursive(tick, 0, Identity, currentBoneMatrices, globalInverseRootTransform);
 		}
+
+		//Setting UBO offset
 		glBindBuffer(GL_UNIFORM_BUFFER, UboMatrices);
-		glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(mat4) * uniformBoneMat[sampleId].size(), uniformBoneMat[sampleId].data());
+		glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(mat4) * currentBoneMatrices.size(), currentBoneMatrices.data());
 
 		glBindBuffer(GL_UNIFORM_BUFFER, 0);
 
@@ -469,12 +457,7 @@ private:
 		return result;
 	}
 
-	//재귀로 접근해 하나의 본을 움직이면 다른 본에도 영향을 가도록 만듦.
-	// TODO: [Animation System & Performance] Remove hardcoded procedural animation (sin math on specific Mixamo bones).
-	// Refactoring plan: 
-	// 1. [Data-Driven] Parse aiAnimation data from the FBX file and interpolate Keyframes (Position/Rotation/Scale) based on tick.
-	// 2. [Performance] Eliminate expensive std::string map lookups (boneNameMap, meshBone) inside this per-frame recursive loop. Replace with flat index arrays.
-	// 3. [Maintenance] Replace aiMatToVmathMat with GLM integration.
+	//Affect all bone using one calculate
 	void calculateBoneTransformRecursive(
 		double tick, int nodeIdx, 
 		const mat4& parentGlobalTransform, 
@@ -553,12 +536,6 @@ private:
 		}
 		return result;
 	}
-
-	/*template <typename KeyT>
-	const auto& pickKey(const vector<KeyT> keys, double tickTime, int duration) {
-		int idx = std::min(static_cast<int>(keys.size() - 1), static_cast<int>(tickTime));
-		return keys[idx].value;
-	}*/
 
 	glm::vec3 pickKey(const vector<Animation::Channel::VectorKey>& keys, double tickTime) {
 		if (tickTime > keys[keys.size() - 1].time) return keys[keys.size() - 1].value;

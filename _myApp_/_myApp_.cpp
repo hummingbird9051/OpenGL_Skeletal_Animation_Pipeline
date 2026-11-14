@@ -297,6 +297,7 @@ public:
 		if (drawModel) {
 			float rotateSpeed = 0.0f;
 			float forwardSpeed = 0.0f;
+			string currentState = "Idle_0";
 			if (!pause)
 			{
 				if (keyPressed_A)
@@ -315,14 +316,17 @@ public:
 				if (keyPressed_W)
 				{
 					forwardSpeed = static_cast<float>(deltaTime) * 3.0f;
+					currentState = "Walking_0";
 				}
 				else if (keyPressed_S)
 				{
 					forwardSpeed = static_cast<float>(deltaTime) * (-3.0f);
+					currentState = "Walking_0";
 				}
 				else
 				{
 					forwardSpeed = 0.0f;
+					currentState = "Idle_0";
 				}
 			}
 			
@@ -337,7 +341,8 @@ public:
 
 			glUniformMatrix4fv(glGetUniformLocation(shader_program, "model"), 1, GL_FALSE, model);
 			
-			modelTime = !pause && (keyPressed_W || keyPressed_S) ? modelTime + deltaTime : modelTime;
+			modelTime = !pause ? modelTime + deltaTime : modelTime;
+			objModel->setCurrentAnimationId(currentState);
 			objModel->draw(shader_program, modelTime);
 		}
 

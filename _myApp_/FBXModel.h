@@ -55,6 +55,8 @@ private:
 	vector<Animation> animations;
 	unordered_map<string, int> findAnimation;
 
+	int currentAnimationId = 0;
+
 	vector<SkeletonBone> nodes;
 
 	mat4 globalInverseRootTransform;
@@ -376,12 +378,15 @@ public:
 		glUniform1i(glGetUniformLocation(_shaderID, "material.useDiffuseMap"), (int)useDiffuseMap);
 		glUniform1i(glGetUniformLocation(_shaderID, "material.useSpecularMap"), (int)useSpecularMap);
 
-		//calculate final bon matrices each frame
-		if (!animations.empty()) {
-			double tick = fmod(currentTime * animations[0].tickperSec, animations[0].duration);
+		
+		if (animations.size() > currentAnimationId && currentAnimationId >=0) {
+			double tick = fmod(currentTime * animations[currentAnimationId].tickperSec, animations[currentAnimationId].duration);
 			currentBoneMatrices.assign(boneCount, Identity);
-			calculateBoneTransformRecursive(tick, 0, Identity, currentBoneMatrices, globalInverseRootTransform);
+			calculateBoneTransformRecursive(tick, 0, Identity, currentBoneMatrices, globalInverseRootTransform, currentAnimationId);
 		}
+
+		//calculate final bon matrices each frame
+		
 
 		//Setting UBO offset
 		glBindBuffer(GL_UNIFORM_BUFFER, UboMatrices);
@@ -407,6 +412,11 @@ public:
 			glBindVertexArray(0);
 		}
 
+	}
+
+	void setCurrentAnimationId(string animationName) {
+
+		if (findAnimation.count(animationName)) currentAnimationId = findAnimation[animationName];
 	}
 
 protected:
@@ -495,21 +505,21 @@ private:
 
 	//Affect all bone using one calculate
 	void calculateBoneTransformRecursive(
-		double tick, int nodeIdx, 
-		const mat4& parentGlobalTransform, 
-		vector<mat4>& outFinalBoneMatrices, 
-		const mat4& globalInverseRootTransform)
+		double tick, int nodeIdx,
+		const mat4& parentGlobalTransform,
+		vector<mat4>& outFinalBoneMatrices,
+		const mat4& globalInverseRootTransform,
+		int currentAnimationId)
 	{
 		string nodeName = nodes[nodeIdx].name;
 		mat4 localNodeTransform;
 		glm::mat4 T;
 		glm::mat4 R;
 		glm::mat4 S;
-
 		// Channel found: build the local transform from interpolated keys. Otherwise use the bind pose.
-		auto it = animations[0].channelIndexByName.find(nodeName);
-		if (it != animations[0].channelIndexByName.end()) {
-			Animation::Channel& channel = animations[0].channels[it->second];
+		auto it = animations[currentAnimationId].channelIndexByName.find(nodeName);
+		if (it != animations[currentAnimationId].channelIndexByName.end()) {
+			Animation::Channel& channel = animations[currentAnimationId].channels[it->second];
 			T = glm::translate(glm::mat4(1.0f), pickKey(channel.positionKeys, tick));
 			R = glm::mat4_cast(pickKey(channel.rotationKeys, tick));
 			S = glm::scale(glm::mat4(1.0f), pickKey(channel.scalingKeys, tick));
@@ -530,7 +540,7 @@ private:
 
 		for (unsigned int i = 0; i < nodes[nodeIdx].children.size(); i++)
 		{
-			calculateBoneTransformRecursive(tick, nodes[nodeIdx].children[i], currentGlobalTransform, outFinalBoneMatrices, globalInverseRootTransform);
+			calculateBoneTransformRecursive(tick, nodes[nodeIdx].children[i], currentGlobalTransform, outFinalBoneMatrices, globalInverseRootTransform, currentAnimationId);
 		}
 	}
 

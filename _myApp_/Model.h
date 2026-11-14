@@ -194,6 +194,8 @@ public:
 	// interfacing with C-API boundaries like fopen() or Assimp.
 	virtual void loadFBX(std::string objectFileName, std::vector<std::string> animationFileName) {}
 
+	virtual void setCurrentAnimationId(std::string animationName) {}
+
 protected:
 	virtual void prepareBuffers() {
 		glBindVertexArray(VAO);

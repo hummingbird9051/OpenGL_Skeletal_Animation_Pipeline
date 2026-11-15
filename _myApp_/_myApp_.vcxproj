@@ -160,6 +160,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\extern\glad\src\glad.c" />
+    <ClCompile Include="Profiler.cpp" />
     <ClCompile Include="_myApp_.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
@@ -183,6 +184,7 @@
     <ClInclude Include="FBXModel.h" />
     <ClInclude Include="Model.h" />
     <ClInclude Include="PostProcessing.h" />
+    <ClInclude Include="Profiler.h" />
     <ClInclude Include="stb_image.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

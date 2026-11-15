@@ -218,6 +218,7 @@ public:
 		if (!window) return false;
 
 		glfwMakeContextCurrent(window);
+		glfwSwapInterval(0); //Off vs
 		info.windowWidth = static_cast<float>(width);
 		info.windowHeight = static_cast<float>(height);
 
@@ -242,6 +243,7 @@ public:
 	// changed overrided render function
 	void render(double currentTime)
 	{
+		Profiler renderProfile(Rendering);
 		int width, height;
 		glfwGetFramebufferSize(window, &width, &height);
 		glViewport(0, 0, width, height);

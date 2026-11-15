@@ -18,8 +18,11 @@
     <ClCompile Include="_myApp_.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="..\extern\glad\src\glad.c">
+    <ClCompile Include="Profiler.cpp">
       <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="..\extern\glad\src\glad.c">
+      <Filter>헤더 파일</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -67,6 +70,9 @@
       <Filter>헤더 파일</Filter>
     </ClInclude>
     <ClInclude Include="stb_image.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="Profiler.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
   </ItemGroup>

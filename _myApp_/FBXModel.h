@@ -3,6 +3,7 @@
 #include<map>
 #include<filesystem>
 #include "Model.h"
+#include "Profiler.h"
 
 using namespace std;
 using namespace vmath;
@@ -381,8 +382,12 @@ public:
 		
 		if (animations.size() > currentAnimationId && currentAnimationId >=0) {
 			double tick = fmod(currentTime * animations[currentAnimationId].tickperSec, animations[currentAnimationId].duration);
-			currentBoneMatrices.assign(boneCount, Identity);
-			calculateBoneTransformRecursive(tick, 0, Identity, currentBoneMatrices, globalInverseRootTransform, currentAnimationId);
+			{
+				Profiler boneProfile(BoneUpdate);
+				currentBoneMatrices.assign(boneCount, Identity);
+				calculateBoneTransformRecursive(tick, 0, Identity, currentBoneMatrices, globalInverseRootTransform, currentAnimationId);
+			}
+			
 		}
 
 		//calculate final bon matrices each frame

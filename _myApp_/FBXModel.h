@@ -93,7 +93,7 @@ private:
 		if (scene->mNumAnimations == 0) {
 			return 0;
 		}
-		string filename = std::filesystem::path(originalFileName).filename().stem().string();
+		string filename = std::filesystem::path(originalFileName).stem().string();
 		int putCount = 0;
 		for (int animIdx = 0; animIdx < scene->mNumAnimations; animIdx++) {
 			if (findAnimation.count(filename + "_" + to_string(animIdx)) != 0) {
@@ -390,8 +390,6 @@ public:
 			}
 			
 		}
-
-		//calculate final bon matrices each frame
 		
 
 		//Setting UBO offset
@@ -421,8 +419,8 @@ public:
 	}
 
 	void setCurrentAnimationId(string animationName) {
-
-		if (findAnimation.count(animationName)) currentAnimationId = findAnimation[animationName];
+		auto it = findAnimation.find(animationName);
+		if (it != findAnimation.end()) currentAnimationId = it->second;
 	}
 
 protected:

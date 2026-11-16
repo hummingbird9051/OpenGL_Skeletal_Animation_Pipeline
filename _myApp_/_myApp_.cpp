@@ -347,7 +347,7 @@ public:
 			modelTime = !pause ? modelTime + deltaTime : modelTime;
 			objModel->setCurrentAnimationId(currentState);
 
-			const auto& uniformAddress = glGetUniformLocation(shader_program, "model");
+			const GLint uniformAddress = glGetUniformLocation(shader_program, "model");
 
 			int modelAmount = 100;
 			int columns = 10;

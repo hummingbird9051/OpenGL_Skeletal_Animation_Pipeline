@@ -273,7 +273,7 @@ public:
 
 		post->bindFrameBuffer();
 
-		//모델 그리기
+		//Drawing model
 		glUseProgram(shader_program);
 
 		glUniformMatrix4fv(glGetUniformLocation(shader_program, "projection"), 1, GL_FALSE, projM);
@@ -337,15 +337,25 @@ public:
 			objPosition[0] += sin(vmath::radians(objYangle)) * forwardSpeed;
 			objPosition[2] += cos(vmath::radians(objYangle)) * forwardSpeed;
 
-			vmath::mat4 model = vmath::translate(objPosition) *
-				vmath::rotate(objYangle, 0.0f, 1.0f, 0.0f) *
-				vmath::scale(0.01f);
 
-			glUniformMatrix4fv(glGetUniformLocation(shader_program, "model"), 1, GL_FALSE, model);
-			
 			modelTime = !pause ? modelTime + deltaTime : modelTime;
 			objModel->setCurrentAnimationId(currentState);
-			objModel->draw(shader_program, modelTime);
+
+			const auto& uniformAddress = glGetUniformLocation(shader_program, "model");
+
+			int modelAmount = 100;
+			int columns = 10;
+			for(int i = 0; i < modelAmount; i++) {
+				vmath::vec3 pos = vmath::vec3(static_cast<float>(i % columns), 0.0f, static_cast<float>(i / columns));
+				vmath::mat4 model = vmath::translate(pos) * vmath::translate(objPosition) *
+					vmath::rotate(objYangle, 0.0f, 1.0f, 0.0f) *
+					vmath::scale(0.01f);
+				glUniformMatrix4fv(uniformAddress, 1, GL_FALSE, model);
+				objModel->draw(shader_program, modelTime + ((i % columns) * (i / columns)));
+			}
+			
+
+			
 		}
 
 		glUseProgram(shader_light_program);

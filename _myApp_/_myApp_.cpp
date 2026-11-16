@@ -116,6 +116,9 @@ public:
 		plateModel = new Model();
 		post = new PostProcessing();
 
+		//Make GPU's profiler
+		gpuProfiler = new GPUProfiler();
+
 		// 쉐이더 프로그램 컴파일 및 연결
 		shader_program = getProgram("Model_vs.glsl", "Model_fs.glsl");
 		shader_light_program = getProgram("Light_vs.glsl", "Light_fs.glsl");
@@ -208,6 +211,8 @@ public:
 		delete post; 
 		delete plateModel;
 
+		//Delete GPUProfiler object
+		delete gpuProfiler;
 
 		glfwDestroyWindow(window);
 	}
@@ -243,7 +248,8 @@ public:
 	// changed overrided render function
 	void render(double currentTime)
 	{
-		Profiler renderProfile(Rendering);
+		CPUProfiler renderProfile(CPURendering);
+
 		int width, height;
 		glfwGetFramebufferSize(window, &width, &height);
 		glViewport(0, 0, width, height);
@@ -270,7 +276,7 @@ public:
 		vmath::vec3 lightDiffuse(0.5f, 0.5f, 0.5f);
 		vmath::vec3 lightSpecular(1.0f, 1.0f, 1.0f);
 
-
+		gpuProfiler->beginQuery(GPURendering);
 		post->bindFrameBuffer();
 
 		//Drawing model
@@ -351,7 +357,7 @@ public:
 					vmath::rotate(objYangle, 0.0f, 1.0f, 0.0f) *
 					vmath::scale(0.01f);
 				glUniformMatrix4fv(uniformAddress, 1, GL_FALSE, model);
-				objModel->draw(shader_program, modelTime + ((i % columns) * (i / columns)));
+				objModel->draw(shader_program, modelTime + (i * 0.01));
 			}
 			
 
@@ -381,8 +387,10 @@ public:
 
 		post->unbindFrameBuffer();
 		post->drawScreen(shader_postprocessing_program, postConvolNum);
+		gpuProfiler->endQuery(GPURendering);
+		gpuProfiler->printQuery();
 
-
+		gpuProfiler->nextFrame();
 		previousTime = currentTime;
 		glfwSwapBuffers(window);
 		glfwPollEvents();
@@ -537,6 +545,8 @@ public:
 
 
 private:
+	GPUProfiler* gpuProfiler = nullptr;
+
 	GLuint shader_program = 0;
 	GLuint shader_light_program = 0;
 	GLuint shader_postprocessing_program = 0;

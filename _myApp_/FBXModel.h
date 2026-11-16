@@ -3,7 +3,8 @@
 #include<map>
 #include<filesystem>
 #include "Model.h"
-#include "Profiler.h"
+#include "CPUProfiler.h"
+#include "GPUProfiler.h"
 
 using namespace std;
 using namespace vmath;
@@ -383,7 +384,7 @@ public:
 		if (animations.size() > currentAnimationId && currentAnimationId >=0) {
 			double tick = fmod(currentTime * animations[currentAnimationId].tickperSec, animations[currentAnimationId].duration);
 			{
-				Profiler boneProfile(BoneUpdate);
+				CPUProfiler boneProfile(CPUBoneUpdate);
 				currentBoneMatrices.assign(boneCount, Identity);
 				calculateBoneTransformRecursive(tick, 0, Identity, currentBoneMatrices, globalInverseRootTransform, currentAnimationId);
 			}

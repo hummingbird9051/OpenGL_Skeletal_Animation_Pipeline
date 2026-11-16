@@ -18,11 +18,14 @@
     <ClCompile Include="_myApp_.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="Profiler.cpp">
+    <ClCompile Include="CPUProfiler.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
     <ClCompile Include="..\extern\glad\src\glad.c">
       <Filter>헤더 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="GPUProfiler.cpp">
+      <Filter>소스 파일</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -72,7 +75,10 @@
     <ClInclude Include="stb_image.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="Profiler.h">
+    <ClInclude Include="CPUProfiler.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="GPUProfiler.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
   </ItemGroup>

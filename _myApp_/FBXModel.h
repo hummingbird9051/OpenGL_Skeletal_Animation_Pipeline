@@ -515,7 +515,7 @@ private:
 		const mat4& globalInverseRootTransform,
 		int currentAnimationId)
 	{
-		string nodeName = nodes[nodeIdx].name;
+		const string& nodeName = nodes[nodeIdx].name;
 		mat4 localNodeTransform;
 		glm::mat4 T;
 		glm::mat4 R;
@@ -523,7 +523,7 @@ private:
 		// Channel found: build the local transform from interpolated keys. Otherwise use the bind pose.
 		auto it = animations[currentAnimationId].channelIndexByName.find(nodeName);
 		if (it != animations[currentAnimationId].channelIndexByName.end()) {
-			Animation::Channel& channel = animations[currentAnimationId].channels[it->second];
+			const Animation::Channel& channel = animations[currentAnimationId].channels[it->second];
 			T = glm::translate(glm::mat4(1.0f), pickKey(channel.positionKeys, tick));
 			R = glm::mat4_cast(pickKey(channel.rotationKeys, tick));
 			S = glm::scale(glm::mat4(1.0f), pickKey(channel.scalingKeys, tick));

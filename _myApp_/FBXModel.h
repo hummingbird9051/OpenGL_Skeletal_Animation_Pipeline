@@ -54,6 +54,21 @@ private:
 		vector<int> children;
 	};
 
+	struct ShaderInfo {
+		GLuint shaderId = 0;
+
+		GLint ulDefaultAmbient = 0;
+		GLint ulDefaultDiffuse = 0;
+		GLint ulDefaultSpecular = 0;
+		GLint ulUseDiffuseMap = 0;
+		GLint ulUseSpecularMap = 0;
+		GLint ulUseNormal = 0;
+		GLint ulShininess = 0;
+		GLint ulDiffuse = 0;
+	};
+
+	ShaderInfo shaderInfo;
+
 	vector<Animation> animations;
 	unordered_map<string, int> findAnimation;
 
@@ -374,11 +389,12 @@ public:
 	}
 
 	void draw(GLuint _shaderID, double currentTime) override {
-		glUniform3fv(glGetUniformLocation(_shaderID, "material.defaultAmbient"), 1, defaultAmbient);
-		glUniform3fv(glGetUniformLocation(_shaderID, "material.defaultDiffuse"), 1, defaultDiffuse);
-		glUniform3fv(glGetUniformLocation(_shaderID, "material.defaultSpecular"), 1, defaultSpecular);
-		glUniform1i(glGetUniformLocation(_shaderID, "material.useDiffuseMap"), (int)useDiffuseMap);
-		glUniform1i(glGetUniformLocation(_shaderID, "material.useSpecularMap"), (int)useSpecularMap);
+		if (_shaderID != shaderInfo.shaderId) setShaderInfo(_shaderID);
+		glUniform3fv(shaderInfo.ulDefaultAmbient, 1, defaultAmbient);
+		glUniform3fv(shaderInfo.ulDefaultDiffuse, 1, defaultDiffuse);
+		glUniform3fv(shaderInfo.ulDefaultSpecular, 1, defaultSpecular);
+		glUniform1i(shaderInfo.ulUseDiffuseMap, (int)useDiffuseMap);
+		glUniform1i(shaderInfo.ulUseSpecularMap, (int)useSpecularMap);
 
 		
 		if (animations.size() > currentAnimationId && currentAnimationId >=0) {
@@ -401,11 +417,11 @@ public:
 		for (int i = 0; i < meshesVAO.size(); i++)
 		{
 
-			glUniform1i(glGetUniformLocation(_shaderID, "useNormal"), (int)normalMesh[i].size());
-			glUniform1f(glGetUniformLocation(_shaderID, "material.shininess"), shininess);
+			glUniform1i(shaderInfo.ulUseNormal, (int)normalMesh[i].size());
+			glUniform1f(shaderInfo.ulShininess, shininess);
 
 			if (useDiffuseMap) {
-				glUniform1i(glGetUniformLocation(_shaderID, "material.diffuse"), i);
+				glUniform1i(shaderInfo.ulDiffuse, i);
 				glActiveTexture(GL_TEXTURE0 + i);
 				glBindTexture(GL_TEXTURE_2D, meshesTexture[i]);
 			}
@@ -490,6 +506,17 @@ protected:
 		glBindBuffer(GL_UNIFORM_BUFFER, 0);
 	}	
 
+	void setShaderInfo(GLuint _shaderId) {
+		shaderInfo.shaderId = _shaderId;
+		shaderInfo.ulDefaultAmbient = glGetUniformLocation(shaderInfo.shaderId, "material.defaultAmbient");
+		shaderInfo.ulDefaultDiffuse = glGetUniformLocation(shaderInfo.shaderId, "material.defaultDiffuse");
+		shaderInfo.ulDefaultSpecular = glGetUniformLocation(shaderInfo.shaderId, "material.defaultSpecular");
+		shaderInfo.ulUseDiffuseMap = glGetUniformLocation(shaderInfo.shaderId, "material.useDiffuseMap");
+		shaderInfo.ulUseSpecularMap = glGetUniformLocation(shaderInfo.shaderId, "material.useSpecularMap");
+		shaderInfo.ulUseNormal = glGetUniformLocation(shaderInfo.shaderId, "useNormal");
+		shaderInfo.ulShininess = glGetUniformLocation(shaderInfo.shaderId, "material.shininess");
+		shaderInfo.ulDiffuse = glGetUniformLocation(shaderInfo.shaderId, "material.diffuse");
+	}
 
 private:
 	//assimp 라이브러리와 vmath 라이브러리의 행기반 열기반 행렬 변환

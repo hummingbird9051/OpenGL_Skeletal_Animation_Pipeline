@@ -2,7 +2,7 @@
 #include<chrono>
 #include<vector>
 
-enum CPULabels { CPUBoneUpdate, CPURendering, CPULabelCount };
+enum CPULabels { CPUBoneUpdate, CPUFrame, CPUSubmit, CPULabelCount };
 
 class CPUProfiler {
 public:

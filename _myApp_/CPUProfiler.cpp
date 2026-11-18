@@ -2,7 +2,7 @@
 #include<iostream>
 
 
-static const char* labelName[CPULabelCount] = { "CPUBoneUpdate", "CPURendering" };
+static const char* labelName[CPULabelCount] = { "CPUBoneUpdate", "CPUFrame", "CPUSubmit" };
 
 struct Status {
 	std::chrono::duration<double, std::milli> period{ 0 };

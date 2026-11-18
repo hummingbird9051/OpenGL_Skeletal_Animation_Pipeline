@@ -248,149 +248,152 @@ public:
 	// changed overrided render function
 	void render(double currentTime)
 	{
-		CPUProfiler renderProfile(CPURendering);
+		CPUProfiler framerProfile(CPUFrame);
+		{
+			CPUProfiler submitProfile(CPUSubmit);
+			int width, height;
+			glfwGetFramebufferSize(window, &width, &height);
+			glViewport(0, 0, width, height);
+			double deltaTime = currentTime - previousTime;
 
-		int width, height;
-		glfwGetFramebufferSize(window, &width, &height);
-		glViewport(0, 0, width, height);
-		double deltaTime = currentTime - previousTime;
+			// calculating camera matrices
+			float distance = 14.f;
+			//vmath::vec3 eye((float)cos(animationTime*0.3f)*distance, 1.0, (float)sin(animationTime*0.3f)*distance);
+			vmath::vec3 eye(0.0f, 1.0f, distance);
+			vmath::vec3 center(0.0, 0.0, 0.0);
+			vmath::vec3 up(0.0, 1.0, 0.0);
+			vmath::mat4 lookAt = vmath::lookat(eye, center, up);
+			vmath::mat4 projM = vmath::perspective(fov, info.windowWidth / (float)info.windowHeight, 0.1f, 1000.0f);
 
-		// calculating camera matrices
-		float distance = 5.f;
-		//vmath::vec3 eye((float)cos(animationTime*0.3f)*distance, 1.0, (float)sin(animationTime*0.3f)*distance);
-		vmath::vec3 eye(0.0f, 1.0f, distance);
-		vmath::vec3 center(0.0, 0.0, 0.0);
-		vmath::vec3 up(0.0, 1.0, 0.0);
-		vmath::mat4 lookAt = vmath::lookat(eye, center, up);
-		vmath::mat4 projM = vmath::perspective(fov, info.windowWidth / (float)info.windowHeight, 0.1f, 1000.0f);
-
-		// setting lighting
-		float r = 1.f;
-		vmath::vec3 lightPos = vmath::vec3((float)sin(animationTime * 0.5f) * r, 0.f, (float)cos(animationTime * 0.5f) * r);
-		vmath::vec3 viewPos = eye;
-		if (deltaTime >= 0.1) deltaTime = 0.1;
-		if (!pause)
-			animationTime += deltaTime;
-
-		vmath::vec3 lightAmbient(0.2f, 0.2f, 0.2f);
-		vmath::vec3 lightDiffuse(0.5f, 0.5f, 0.5f);
-		vmath::vec3 lightSpecular(1.0f, 1.0f, 1.0f);
-
-		gpuProfiler->beginQuery(GPURendering);
-		post->bindFrameBuffer();
-
-		//Drawing model
-		glUseProgram(shader_program);
-
-		glUniformMatrix4fv(glGetUniformLocation(shader_program, "projection"), 1, GL_FALSE, projM);
-		glUniformMatrix4fv(glGetUniformLocation(shader_program, "view"), 1, GL_FALSE, lookAt);
-
-		glUniform3fv(glGetUniformLocation(shader_program, "viewPos"), 1, viewPos);
-
-		glUniform3fv(glGetUniformLocation(shader_program, "light.position"), 1, lightPos);
-		glUniform3fv(glGetUniformLocation(shader_program, "light.ambient"), 1, lightAmbient);
-		glUniform3fv(glGetUniformLocation(shader_program, "light.diffuse"), 1, lightDiffuse);
-		glUniform3fv(glGetUniformLocation(shader_program, "light.specular"), 1, lightSpecular);
-		// TODO: [Performance / CPU Bottleneck] Severe CPU overhead caused by redundant string lookups (glGetUniformLocation) 
-		// and multiple state changes (4x glUniform calls) per frame inside the render loop.
-		// Refactoring plan: Pack light properties into a single struct and migrate to UBO (Uniform Buffer Object) 
-		// to achieve a single batch upload, drastically reducing CPU-GPU communication costs.
-
-		if (lineMode)
-			glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-		else
-			glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-
-		//moving while drawing(Not the pause statement)
-		if (drawModel) {
-			float rotateSpeed = 0.0f;
-			float forwardSpeed = 0.0f;
-			string currentState = "Idle_0";
+			// setting lighting
+			float r = 1.f;
+			vmath::vec3 lightPos = vmath::vec3((float)sin(animationTime * 0.5f) * r, 0.f, (float)cos(animationTime * 0.5f) * r);
+			vmath::vec3 viewPos = eye;
+			if (deltaTime >= 0.1) deltaTime = 0.1;
 			if (!pause)
-			{
-				if (keyPressed_A)
+				animationTime += deltaTime;
+
+			vmath::vec3 lightAmbient(0.2f, 0.2f, 0.2f);
+			vmath::vec3 lightDiffuse(0.5f, 0.5f, 0.5f);
+			vmath::vec3 lightSpecular(1.0f, 1.0f, 1.0f);
+
+			gpuProfiler->beginQuery(GPURendering);
+			post->bindFrameBuffer();
+
+			//Drawing model
+			glUseProgram(shader_program);
+
+			glUniformMatrix4fv(glGetUniformLocation(shader_program, "projection"), 1, GL_FALSE, projM);
+			glUniformMatrix4fv(glGetUniformLocation(shader_program, "view"), 1, GL_FALSE, lookAt);
+
+			glUniform3fv(glGetUniformLocation(shader_program, "viewPos"), 1, viewPos);
+
+			glUniform3fv(glGetUniformLocation(shader_program, "light.position"), 1, lightPos);
+			glUniform3fv(glGetUniformLocation(shader_program, "light.ambient"), 1, lightAmbient);
+			glUniform3fv(glGetUniformLocation(shader_program, "light.diffuse"), 1, lightDiffuse);
+			glUniform3fv(glGetUniformLocation(shader_program, "light.specular"), 1, lightSpecular);
+			// TODO: [Performance / CPU Bottleneck] Severe CPU overhead caused by redundant string lookups (glGetUniformLocation) 
+			// and multiple state changes (4x glUniform calls) per frame inside the render loop.
+			// Refactoring plan: Pack light properties into a single struct and migrate to UBO (Uniform Buffer Object) 
+			// to achieve a single batch upload, drastically reducing CPU-GPU communication costs.
+
+			if (lineMode)
+				glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+			else
+				glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+
+			//moving while drawing(Not the pause statement)
+			if (drawModel) {
+				float rotateSpeed = 0.0f;
+				float forwardSpeed = 0.0f;
+				string currentState = "Idle_0";
+				if (!pause)
 				{
-					rotateSpeed = static_cast<float>(deltaTime) * 300.0f;
-				}
-				else if (keyPressed_D)
-				{
-					rotateSpeed = static_cast<float>(deltaTime) * (- 300.0f);
-				}
-				else
-				{
-					rotateSpeed = 0.0f;
+					if (keyPressed_A)
+					{
+						rotateSpeed = static_cast<float>(deltaTime) * 300.0f;
+					}
+					else if (keyPressed_D)
+					{
+						rotateSpeed = static_cast<float>(deltaTime) * (-300.0f);
+					}
+					else
+					{
+						rotateSpeed = 0.0f;
+					}
+
+					if (keyPressed_W)
+					{
+						forwardSpeed = static_cast<float>(deltaTime) * 3.0f;
+						currentState = "Walking_0";
+					}
+					else if (keyPressed_S)
+					{
+						forwardSpeed = static_cast<float>(deltaTime) * (-3.0f);
+						currentState = "Walking_0";
+					}
+					else
+					{
+						forwardSpeed = 0.0f;
+						currentState = "Idle_0";
+					}
 				}
 
-				if (keyPressed_W)
-				{
-					forwardSpeed = static_cast<float>(deltaTime) * 3.0f;
-					currentState = "Walking_0";
+
+				objYangle += rotateSpeed;
+				objPosition[0] += sin(vmath::radians(objYangle)) * forwardSpeed;
+				objPosition[2] += cos(vmath::radians(objYangle)) * forwardSpeed;
+
+
+				modelTime = !pause ? modelTime + deltaTime : modelTime;
+				objModel->setCurrentAnimationId(currentState);
+
+				const GLint uniformAddress = glGetUniformLocation(shader_program, "model");
+
+				int modelAmount = 100;
+				int columns = 10;
+				for (int i = 0; i < modelAmount; i++) {
+					vmath::vec3 pos = vmath::vec3(static_cast<float>(i % columns * 0.6), 0.0f, static_cast<float>(i / columns * 0.6));
+					vmath::mat4 model = vmath::translate(pos) * vmath::translate(objPosition) *
+						vmath::rotate(objYangle, 0.0f, 1.0f, 0.0f) *
+						vmath::scale(0.01f);
+					glUniformMatrix4fv(uniformAddress, 1, GL_FALSE, model);
+					objModel->draw(shader_program, modelTime + (i * 0.01));
 				}
-				else if (keyPressed_S)
-				{
-					forwardSpeed = static_cast<float>(deltaTime) * (-3.0f);
-					currentState = "Walking_0";
-				}
-				else
-				{
-					forwardSpeed = 0.0f;
-					currentState = "Idle_0";
-				}
+
+
+
 			}
-			
 
-			objYangle += rotateSpeed;
-			objPosition[0] += sin(vmath::radians(objYangle)) * forwardSpeed;
-			objPosition[2] += cos(vmath::radians(objYangle)) * forwardSpeed;
+			glUseProgram(shader_light_program);
+			// 피라미드 그리기 ---------------------------------------
+			if (drawLight) {
+				vmath::mat4 transform = vmath::translate(lightPos) * vmath::scale(0.05f);
 
-
-			modelTime = !pause ? modelTime + deltaTime : modelTime;
-			objModel->setCurrentAnimationId(currentState);
-
-			const GLint uniformAddress = glGetUniformLocation(shader_program, "model");
-
-			int modelAmount = 100;
-			int columns = 10;
-			for(int i = 0; i < modelAmount; i++) {
-				vmath::vec3 pos = vmath::vec3(static_cast<float>(i % columns), 0.0f, static_cast<float>(i / columns));
-				vmath::mat4 model = vmath::translate(pos) * vmath::translate(objPosition) *
-					vmath::rotate(objYangle, 0.0f, 1.0f, 0.0f) *
-					vmath::scale(0.01f);
-				glUniformMatrix4fv(uniformAddress, 1, GL_FALSE, model);
-				objModel->draw(shader_program, modelTime + (i * 0.01));
+				glUniformMatrix4fv(glGetUniformLocation(shader_light_program, "projection"), 1, GL_FALSE, projM);
+				glUniformMatrix4fv(glGetUniformLocation(shader_light_program, "view"), 1, GL_FALSE, lookAt);
+				glUniformMatrix4fv(glGetUniformLocation(shader_light_program, "model"), 1, GL_FALSE, transform);
+				pyramidModel->draw(shader_light_program, currentTime);
 			}
-			
 
+			mat4 plateTransform = translate(0.0f, -1.0f, 0.0f) * rotate(-90.0f, vec3(1.0f, 0.0f, 0.0f)) * scale(10.0f, 10.0f, 1.0f);
+			glUniformMatrix4fv(glGetUniformLocation(shader_light_program, "model"), 1, GL_FALSE, plateTransform);
+			glUniform3fv(glGetUniformLocation(shader_light_program, "viewPos"), 1, viewPos);
+
+			glUniform3fv(glGetUniformLocation(shader_light_program, "light.position"), 1, lightPos);
+			glUniform3fv(glGetUniformLocation(shader_light_program, "light.ambient"), 1, lightAmbient);
+			glUniform3fv(glGetUniformLocation(shader_light_program, "light.diffuse"), 1, lightDiffuse);
+			glUniform3fv(glGetUniformLocation(shader_light_program, "light.specular"), 1, lightSpecular);
+			plateModel->draw(shader_light_program, currentTime);
+
+			post->unbindFrameBuffer();
+			post->drawScreen(shader_postprocessing_program, postConvolNum);
+			gpuProfiler->endQuery(GPURendering);
 			
 		}
-
-		glUseProgram(shader_light_program);
-		// 피라미드 그리기 ---------------------------------------
-		if (drawLight) {
-			vmath::mat4 transform = vmath::translate(lightPos) * vmath::scale(0.05f);
-
-			glUniformMatrix4fv(glGetUniformLocation(shader_light_program, "projection"), 1, GL_FALSE, projM);
-			glUniformMatrix4fv(glGetUniformLocation(shader_light_program, "view"), 1, GL_FALSE, lookAt);
-			glUniformMatrix4fv(glGetUniformLocation(shader_light_program, "model"), 1, GL_FALSE, transform);
-			pyramidModel->draw(shader_light_program, currentTime);
-		}
-
-		mat4 plateTransform = translate(0.0f, -1.0f, 0.0f) *  rotate(-90.0f, vec3(1.0f, 0.0f, 0.0f))* scale(10.0f, 10.0f, 1.0f);
-		glUniformMatrix4fv(glGetUniformLocation(shader_light_program, "model"), 1, GL_FALSE, plateTransform);
-		glUniform3fv(glGetUniformLocation(shader_light_program, "viewPos"), 1, viewPos);
-
-		glUniform3fv(glGetUniformLocation(shader_light_program, "light.position"), 1, lightPos);
-		glUniform3fv(glGetUniformLocation(shader_light_program, "light.ambient"), 1, lightAmbient);
-		glUniform3fv(glGetUniformLocation(shader_light_program, "light.diffuse"), 1, lightDiffuse);
-		glUniform3fv(glGetUniformLocation(shader_light_program, "light.specular"), 1, lightSpecular);
-		plateModel->draw(shader_light_program, currentTime);
-
-		post->unbindFrameBuffer();
-		post->drawScreen(shader_postprocessing_program, postConvolNum);
-		gpuProfiler->endQuery(GPURendering);
 		gpuProfiler->printQuery();
-
 		gpuProfiler->nextFrame();
+
 		previousTime = currentTime;
 		glfwSwapBuffers(window);
 		glfwPollEvents();
@@ -506,7 +509,7 @@ public:
 	}
 
 #define MAX_FOV 120.f
-#define MIN_FOV 10.f
+#define MIN_FOV 1.f
 
 
 	static void mouseWheelCallback(GLFWwindow* window, double xOffset, double yOffset) {

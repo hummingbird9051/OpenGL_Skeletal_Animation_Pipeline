@@ -443,8 +443,6 @@ public:
 				break;
 			case 'C':
 				postConvolNum = 2;
-			default:
-				break;
 			};
 
 			if (key == GLFW_KEY_A)

@@ -61,7 +61,7 @@ private:
 
 	vector<SkeletonBone> nodes;
 
-	mat4 globalInverseRootTransform;
+	mat4 globalInverseRootTransform = mat4(1.0f);
 
 	vector<mat4> currentBoneMatrices; //save bone matrices each frame
 
@@ -71,7 +71,7 @@ private:
 	vector<GLuint> meshesVBOTexCoord;
 	vector<GLuint> meshesVBOBoneID;
 	vector<GLuint> meshesVBOWeights;
-	GLuint UboMatrices;
+	GLuint UboMatrices = 0;
 
 	vector<GLuint> meshesTexture;
 
@@ -84,7 +84,7 @@ private:
 
 	const mat4 Identity = mat4(vec4(1.0, 0.0, 0.0, 0.0), vec4(0.0, 1.0, 0.0, 0.0), vec4(0.0, 0.0, 1.0, 0.0), vec4(0.0, 0.0, 0.0, 1.0));
 
-	int boneCount;
+	int boneCount = 0;
 
 	vector<string> boneName;
 	map<string, int> boneNameMap;
@@ -95,7 +95,7 @@ private:
 		}
 		string filename = std::filesystem::path(originalFileName).stem().string();
 		int putCount = 0;
-		for (int animIdx = 0; animIdx < scene->mNumAnimations; animIdx++) {
+		for (unsigned int animIdx = 0; animIdx < scene->mNumAnimations; animIdx++) {
 			if (findAnimation.count(filename + "_" + to_string(animIdx)) != 0) {
 				cerr << "There's " << filename << " animation already" << endl;
 				continue;
@@ -106,7 +106,7 @@ private:
 			animation.tickperSec = anim->mTicksPerSecond > 0.0 ? anim->mTicksPerSecond : 25.0;
 			animation.channels.resize(static_cast<size_t>(anim->mNumChannels));
 			//collect by channel
-			for (int ch = 0; ch < anim->mNumChannels; ch++) {
+			for (unsigned int ch = 0; ch < anim->mNumChannels; ch++) {
 				aiNodeAnim* nodeAnim = anim->mChannels[ch];
 				//collecting information by keys
 				animation.channels[ch].name = nodeAnim->mNodeName.C_Str();
@@ -114,20 +114,20 @@ private:
 				animation.channels[ch].positionKeys.resize(nodeAnim->mNumPositionKeys);
 				animation.channels[ch].rotationKeys.resize(nodeAnim->mNumRotationKeys);
 				animation.channels[ch].scalingKeys.resize(nodeAnim->mNumScalingKeys);
-				for (int posKey = 0; posKey < nodeAnim->mNumPositionKeys; posKey++) {
+				for (unsigned int posKey = 0; posKey < nodeAnim->mNumPositionKeys; posKey++) {
 					animation.channels[ch].positionKeys[posKey].value.x = nodeAnim->mPositionKeys[posKey].mValue.x;
 					animation.channels[ch].positionKeys[posKey].value.y = nodeAnim->mPositionKeys[posKey].mValue.y;
 					animation.channels[ch].positionKeys[posKey].value.z = nodeAnim->mPositionKeys[posKey].mValue.z;
 					animation.channels[ch].positionKeys[posKey].time = nodeAnim->mPositionKeys[posKey].mTime;
 				}
-				for (int rotKey = 0; rotKey < nodeAnim->mNumRotationKeys; rotKey++) {
+				for (unsigned int rotKey = 0; rotKey < nodeAnim->mNumRotationKeys; rotKey++) {
 					animation.channels[ch].rotationKeys[rotKey].value.w = nodeAnim->mRotationKeys[rotKey].mValue.w;
 					animation.channels[ch].rotationKeys[rotKey].value.x = nodeAnim->mRotationKeys[rotKey].mValue.x;
 					animation.channels[ch].rotationKeys[rotKey].value.y = nodeAnim->mRotationKeys[rotKey].mValue.y;
 					animation.channels[ch].rotationKeys[rotKey].value.z = nodeAnim->mRotationKeys[rotKey].mValue.z;
 					animation.channels[ch].rotationKeys[rotKey].time = nodeAnim->mRotationKeys[rotKey].mTime;
 				}
-				for (int scaleKey = 0; scaleKey < nodeAnim->mNumScalingKeys; scaleKey++) {
+				for (unsigned int scaleKey = 0; scaleKey < nodeAnim->mNumScalingKeys; scaleKey++) {
 					animation.channels[ch].scalingKeys[scaleKey].value.x = nodeAnim->mScalingKeys[scaleKey].mValue.x;
 					animation.channels[ch].scalingKeys[scaleKey].value.y = nodeAnim->mScalingKeys[scaleKey].mValue.y;
 					animation.channels[ch].scalingKeys[scaleKey].value.z = nodeAnim->mScalingKeys[scaleKey].mValue.z;
@@ -136,7 +136,7 @@ private:
 			}
 			
 			animations.push_back(std::move(animation));
-			findAnimation[filename + "_" + to_string(animIdx)] = animations.size() - 1;
+			findAnimation[filename + "_" + to_string(animIdx)] = static_cast<int>(animations.size()) - 1;
 			putCount++;
 		}
 		return putCount;
@@ -214,7 +214,7 @@ public:
 
 		//Collect Mesh Information
 		boneDataMesh.resize(scene->mNumMeshes);
-		for (int meshIdx = 0; meshIdx < scene->mNumMeshes; meshIdx++)
+		for (unsigned int meshIdx = 0; meshIdx < scene->mNumMeshes; meshIdx++)
 		{
 			const aiMesh* mesh = scene->mMeshes[meshIdx];
 			vector<vmath::vec3> tmpPositions;
@@ -286,7 +286,7 @@ public:
 			meshesVBOWeights.push_back(0);
 			meshesTexture.push_back(0);
 
-			for (int boneMeshId = 0; boneMeshId < mesh->mNumBones; boneMeshId++)
+			for (unsigned int boneMeshId = 0; boneMeshId < mesh->mNumBones; boneMeshId++)
 			{
 				aiBone* bone_mesh = mesh->mBones[boneMeshId];
 				if (find(boneName.begin(), boneName.end(), bone_mesh->mName.C_Str()) == boneName.end())
@@ -294,7 +294,7 @@ public:
 					boneName.push_back(bone_mesh->mName.C_Str());
 				}
 				string name_of_current_aiBone = bone_mesh->mName.C_Str();
-				for (int id = 0; id < bone_mesh->mNumWeights; id++) {
+				for (unsigned int id = 0; id < bone_mesh->mNumWeights; id++) {
 					int vertexId = bone_mesh->mWeights[id].mVertexId;
 					float weight_val = bone_mesh->mWeights[id].mWeight;
 
@@ -328,7 +328,7 @@ public:
 		{
 			boneNameMap[boneName[i]] = i;
 		}
-		boneCount = boneName.size();
+		boneCount = static_cast<int>(boneName.size());
 
 		//refactor: Bone data saving(from scene)
 		currentBoneMatrices.assign(boneCount, Identity);
@@ -411,7 +411,7 @@ public:
 			}
 
 			glBindVertexArray(meshesVAO[i]);
-			glDrawArrays(GL_TRIANGLES, 0, positionMesh[i].size());
+			glDrawArrays(GL_TRIANGLES, 0, static_cast<GLsizei>(positionMesh[i].size()));
 
 			glBindVertexArray(0);
 		}
@@ -566,8 +566,8 @@ private:
 		temp.parent = parentInfo;
 		temp.localBindTransform = aiMatToGlmMat(cur->mTransformation);
 		nodes.push_back(std::move(temp));
-		int currInfo = nodes.size() - 1;
-		for (int i = 0; i < cur->mNumChildren; i++) {
+		int currInfo = static_cast<int>(nodes.size()) - 1;
+		for (unsigned int i = 0; i < cur->mNumChildren; i++) {
 			int childrenInfo = saveBoneData(cur->mChildren[i], currInfo);
 			if (childrenInfo >= 0) nodes[currInfo].children.push_back(childrenInfo);
 		}
@@ -594,7 +594,7 @@ private:
 			return keys[0].value;
 		}
 		int left = 0;
-		int right = keys.size() - 1;
+		int right = static_cast<int>(keys.size()) - 1;
 		while ((left + 1 <= keys.size() - 1 && right - 1 >= 0) && (right - left != 1)) {
 			if (keys[left + 1].time <= tickTime) left++;
 			if (keys[right - 1].time > tickTime) right--;
@@ -611,7 +611,7 @@ private:
 			return keys[0].value;
 		}
 		int left = 0;
-		int right = keys.size() - 1;
+		int right = static_cast<int>(keys.size()) - 1;
 		while ((left + 1 <= keys.size() - 1 && right - 1 >= 0) && right - left != 1) {
 			if (keys[left + 1].time <= tickTime) left++;
 			if (keys[right - 1].time > tickTime) right--;

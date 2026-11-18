@@ -36,17 +36,17 @@ public:
 	std::vector<vmath::vec3> vNormals;
 	std::vector<GLuint> vIndices;
 
-	GLuint diffuseMap, specularMap;
-	float shininess;
-	vmath::vec3 defaultAmbient, defaultDiffuse, defaultSpecular;
+	GLuint diffuseMap = 0, specularMap = 0;
+	float shininess = 0.0f;
+	vmath::vec3 defaultAmbient = vmath::vec3(1.0f), defaultDiffuse = vmath::vec3(1.0f), defaultSpecular = vmath::vec3(1.0f);
 
 private:
-	GLuint VAO;
-	GLuint VBO_positions, VBO_texCoords, VBO_normals;
-	GLuint EBO;
+	GLuint VAO = 0;
+	GLuint VBO_positions = 0, VBO_texCoords = 0, VBO_normals = 0;
+	GLuint EBO = 0;
 
 protected:
-	bool useDiffuseMap, useSpecularMap;
+	bool useDiffuseMap = false, useSpecularMap = false;
 
 
 public:
@@ -181,9 +181,9 @@ public:
 
 		glBindVertexArray(VAO);
 		if (vIndices.empty())
-			glDrawArrays(GL_TRIANGLES, 0, vPositions.size());
+			glDrawArrays(GL_TRIANGLES, 0, static_cast<GLsizei>(vPositions.size()));
 		else
-			glDrawElements(GL_TRIANGLES, vIndices.size(), GL_UNSIGNED_INT, 0);
+			glDrawElements(GL_TRIANGLES, static_cast<GLsizei>(vIndices.size()), GL_UNSIGNED_INT, 0);
 		glBindVertexArray(0);
 
 
@@ -228,7 +228,7 @@ protected:
 		unsigned char* data = stbi_load(filepath, &width, &height, &nrChannels, 0);
 
 		if (data) {
-			GLenum format;
+			GLenum format = 0;
 			if (nrChannels == 1)
 				format = GL_RED;
 			else if (nrChannels == 3) // R, G, B (ex. jpg)

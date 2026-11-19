@@ -183,4 +183,4 @@ opt-2 Cache Uniform Location
 | Model | CPUSubmit (opt1 → opt2) 	| Submit - Bone Calculation 	|
 | 1 	| 0.067 → 0.069 		| No Difference (Deviation)	|
 | 10 	| 0.467 → 0.459 		| 0.049 → 0.040 		|
-| 100 	| 3.94 → **3.88** (−1.4%) 	| 0.37 → **0.30** (Around −18%)	|
+| 100 	| 3.94 → 3.88 (−1.4%) 		| 0.37 → 0.30 (Around −18%)	|

@@ -414,9 +414,9 @@ public:
 
 	void draw(GLuint _shaderID, double currentTime) override {
 		if (_shaderID != shaderInfo.shaderId) setShaderInfo(_shaderID);
-		glUniform3fv(shaderInfo.ulDefaultAmbient, 1, defaultAmbient);
-		glUniform3fv(shaderInfo.ulDefaultDiffuse, 1, defaultDiffuse);
-		glUniform3fv(shaderInfo.ulDefaultSpecular, 1, defaultSpecular);
+		glUniform3fv(shaderInfo.ulDefaultAmbient, 1, glm::value_ptr(defaultAmbient));
+		glUniform3fv(shaderInfo.ulDefaultDiffuse, 1, glm::value_ptr(defaultDiffuse));
+		glUniform3fv(shaderInfo.ulDefaultSpecular, 1, glm::value_ptr(defaultSpecular));
 		glUniform1i(shaderInfo.ulUseDiffuseMap, (int)useDiffuseMap);
 		glUniform1i(shaderInfo.ulUseSpecularMap, (int)useSpecularMap);
 

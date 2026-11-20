@@ -10,8 +10,9 @@
 #include <unordered_map>
 #include <algorithm>
 
-#include <vmath.h>
 #include <glm/glm.hpp>
+#include<glm/gtc/matrix_transform.hpp>
+#include<glm/gtc/type_ptr.hpp>
 #include <glm/gtc/quaternion.hpp>
 
 #include<assimp/Importer.hpp>
@@ -23,22 +24,23 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 
+
 struct BoneInfo
 {
-	vmath::mat4 BoneOffset;
-	vmath::mat4 FinalTransformation;
+	glm::mat4 BoneOffset;
+	glm::mat4 FinalTransformation;
 };
 
 class Model {
 public:
-	std::vector<vmath::vec3> vPositions;
-	std::vector<vmath::vec2> vTexCoords;
-	std::vector<vmath::vec3> vNormals;
+	std::vector<glm::vec3> vPositions;
+	std::vector<glm::vec2> vTexCoords;
+	std::vector<glm::vec3> vNormals;
 	std::vector<GLuint> vIndices;
 
 	GLuint diffuseMap = 0, specularMap = 0;
 	float shininess = 0.0f;
-	vmath::vec3 defaultAmbient = vmath::vec3(1.0f), defaultDiffuse = vmath::vec3(1.0f), defaultSpecular = vmath::vec3(1.0f);
+	glm::vec3 defaultAmbient = glm::vec3(1.0f), defaultDiffuse = glm::vec3(1.0f), defaultSpecular = glm::vec3(1.0f);
 
 private:
 	GLuint VAO = 0;
@@ -59,9 +61,9 @@ public:
 		useDiffuseMap = false;
 		useSpecularMap = false;
 
-		defaultAmbient = vmath::vec3(1.0f, 1.0f, 1.0f);
-		defaultDiffuse = vmath::vec3(1.0f, 1.0f, 1.0f);
-		defaultSpecular = vmath::vec3(0.0f, 0.0f, 0.0f);
+		defaultAmbient = glm::vec3(1.0f, 1.0f, 1.0f);
+		defaultDiffuse = glm::vec3(1.0f, 1.0f, 1.0f);
+		defaultSpecular = glm::vec3(0.0f, 0.0f, 0.0f);
 		// TODO: [Dependency] Remove sb7 legacy math library (vmath::vec3).
 		// Replace all vmath occurrences with industry-standard GLM (glm::vec3).
 	}
@@ -92,7 +94,7 @@ public:
 	void setupMesh(int _numVertices, GLfloat* _vPositions, GLfloat* _vTexCoords = NULL, GLfloat* _vNormals = NULL) {
 		// 1. copy data from arrays
 		for (int i = 0; i < _numVertices; i++) {
-			vmath::vec3 position;
+			glm::vec3 position;
 			position[0] = _vPositions[i * 3 + 0];
 			position[1] = _vPositions[i * 3 + 1];
 			position[2] = _vPositions[i * 3 + 2];
@@ -101,7 +103,7 @@ public:
 
 		if (_vTexCoords) {
 			for (int i = 0; i < _numVertices; i++) {
-				vmath::vec2 texCoords;
+				glm::vec2 texCoords;
 				texCoords[0] = _vTexCoords[i * 2 + 0];
 				texCoords[1] = _vTexCoords[i * 2 + 1];
 				this->vTexCoords.push_back(texCoords);
@@ -110,7 +112,7 @@ public:
 
 		if (_vNormals) {
 			for (int i = 0; i < _numVertices; i++) {
-				vmath::vec3 normal;
+				glm::vec3 normal;
 				normal[0] = _vNormals[i * 3 + 0];
 				normal[1] = _vNormals[i * 3 + 1];
 				normal[2] = _vNormals[i * 3 + 2];
@@ -156,9 +158,9 @@ public:
 
 	virtual void draw(GLuint _shaderID, double currentTime) {
 		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-		glUniform3fv(glGetUniformLocation(_shaderID, "material.defaultAmbient"), 1, defaultAmbient);
-		glUniform3fv(glGetUniformLocation(_shaderID, "material.defaultDiffuse"), 1, defaultDiffuse);
-		glUniform3fv(glGetUniformLocation(_shaderID, "material.defaultSpecular"), 1, defaultSpecular);
+		glUniform3fv(glGetUniformLocation(_shaderID, "material.defaultAmbient"), 1, glm::value_ptr(defaultAmbient));
+		glUniform3fv(glGetUniformLocation(_shaderID, "material.defaultDiffuse"), 1, glm::value_ptr(defaultDiffuse));
+		glUniform3fv(glGetUniformLocation(_shaderID, "material.defaultSpecular"), 1, glm::value_ptr(defaultSpecular));
 		glUniform1i(glGetUniformLocation(_shaderID, "material.useDiffuseMap"), (int)useDiffuseMap);
 		glUniform1i(glGetUniformLocation(_shaderID, "material.useSpecularMap"), (int)useSpecularMap);
 
@@ -201,20 +203,20 @@ protected:
 		glBindVertexArray(VAO);
 
 		glBindBuffer(GL_ARRAY_BUFFER, VBO_positions);
-		glBufferData(GL_ARRAY_BUFFER, vPositions.size() * sizeof(vmath::vec3), &vPositions[0], GL_STATIC_DRAW);
+		glBufferData(GL_ARRAY_BUFFER, vPositions.size() * sizeof(glm::vec3), &vPositions[0], GL_STATIC_DRAW);
 		glEnableVertexAttribArray(0);
 		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
 
 		if (!vTexCoords.empty()) {
 			glBindBuffer(GL_ARRAY_BUFFER, VBO_texCoords);
-			glBufferData(GL_ARRAY_BUFFER, vTexCoords.size() * sizeof(vmath::vec2), &vTexCoords[0], GL_STATIC_DRAW);
+			glBufferData(GL_ARRAY_BUFFER, vTexCoords.size() * sizeof(glm::vec2), &vTexCoords[0], GL_STATIC_DRAW);
 			glEnableVertexAttribArray(1);
 			glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), (void*)0);
 		}
 
 		if (!vNormals.empty()) {
 			glBindBuffer(GL_ARRAY_BUFFER, VBO_normals);
-			glBufferData(GL_ARRAY_BUFFER, vNormals.size() * sizeof(vmath::vec3), &vNormals[0], GL_STATIC_DRAW);
+			glBufferData(GL_ARRAY_BUFFER, vNormals.size() * sizeof(glm::vec3), &vNormals[0], GL_STATIC_DRAW);
 			glEnableVertexAttribArray(2);
 			glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
 		}

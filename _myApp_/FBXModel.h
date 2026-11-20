@@ -7,10 +7,7 @@
 #include "GPUProfiler.h"
 
 using namespace std;
-using namespace vmath;
 
-
-const mat4 Identity = mat4(vec4(1.0, 0.0, 0.0, 0.0), vec4(0.0, 1.0, 0.0, 0.0), vec4(0.0, 0.0, 1.0, 0.0), vec4(0.0, 0.0, 0.0, 1.0));
 
 struct VertexBoneData
 {
@@ -24,7 +21,7 @@ class FBXModel : public Model
 private:
 	struct Bone
 	{
-		mat4 boneMatrix = Identity;
+		glm::mat4 boneMatrix = glm::mat4(1.0f);
 	};
 	struct Animation {
 		struct Channel {
@@ -78,9 +75,9 @@ private:
 
 	vector<SkeletonBone> nodes;
 
-	mat4 globalInverseRootTransform = mat4(1.0f);
+	glm::mat4 globalInverseRootTransform = glm::mat4(1.0f);
 
-	vector<mat4> currentBoneMatrices; //save bone matrices each frame
+	vector<glm::mat4> currentBoneMatrices; //save bone matrices each frame
 
 	vector<GLuint> meshesVAO;
 	vector<GLuint> meshesVBOPosition;
@@ -92,9 +89,9 @@ private:
 
 	vector<GLuint> meshesTexture;
 
-	vector<vector<vec3>> positionMesh;
-	vector<vector<vec2>> texCoordMesh;
-	vector<vector<vec3>> normalMesh;
+	vector<vector<glm::vec3>> positionMesh;
+	vector<vector<glm::vec2>> texCoordMesh;
+	vector<vector<glm::vec3>> normalMesh;
 	vector<vector<VertexBoneData>> boneDataMesh;					//vbo로 넘길 버텍스별 본과의 관계
 
 	map<string, Bone> meshBone;
@@ -242,16 +239,16 @@ public:
 		for (unsigned int meshIdx = 0; meshIdx < scene->mNumMeshes; meshIdx++)
 		{
 			const aiMesh* mesh = scene->mMeshes[meshIdx];
-			vector<vmath::vec3> tmpPositions;
-			vector<vmath::vec2> tmpTexCoords;
-			vector<vmath::vec3> tmpNormals;
+			vector<glm::vec3> tmpPositions;
+			vector<glm::vec2> tmpTexCoords;
+			vector<glm::vec3> tmpNormals;
 			vector<GLuint> tmpVIndices;
 			vector<VertexBoneData> tmpBoneData;
 
 
-			vector<vmath::vec3> meshPositions;
-			vector<vmath::vec2> meshTexCoords;
-			vector<vmath::vec3> meshNormals;
+			vector<glm::vec3> meshPositions;
+			vector<glm::vec2> meshTexCoords;
+			vector<glm::vec3> meshNormals;
 
 			//cout << mesh->mName.C_Str() << std::endl;
 			//collect vertex information
@@ -264,11 +261,11 @@ public:
 				vPosition.x = mesh->mVertices[i].x;
 				vPosition.y = mesh->mVertices[i].y;
 				vPosition.z = mesh->mVertices[i].z;
-				tmpPositions.push_back(vec3(vPosition[0], vPosition[1], vPosition[2]));
+				tmpPositions.push_back(glm::vec3(vPosition[0], vPosition[1], vPosition[2]));
 				vNormal.x = mesh->mNormals[i].x;
 				vNormal.y = mesh->mNormals[i].y;
 				vNormal.z = mesh->mNormals[i].z;
-				tmpNormals.push_back(vec3(vNormal[0], vNormal[1], vNormal[2]));
+				tmpNormals.push_back(glm::vec3(vNormal[0], vNormal[1], vNormal[2]));
 				if (mesh->HasTextureCoords(0))
 				{
 					vTexCoord.x = mesh->mTextureCoords[0][i].x;
@@ -278,7 +275,7 @@ public:
 				{
 					vTexCoord = aiVector2D(0.0f, 0.0f);
 				}
-				tmpTexCoords.push_back(vec2(vTexCoord.x, vTexCoord.y));
+				tmpTexCoords.push_back(glm::vec2(vTexCoord.x, vTexCoord.y));
 
 			}
 
@@ -289,9 +286,9 @@ public:
 				const aiFace& face = mesh->mFaces[i];
 				for (unsigned k = 0; k < face.mNumIndices; ++k)
 				{
-					vec3 position = tmpPositions[face.mIndices[k]];
-					vec3 normal = tmpNormals[face.mIndices[k]];
-					vec2 texCoord = tmpTexCoords[face.mIndices[k]];
+					glm::vec3 position = tmpPositions[face.mIndices[k]];
+					glm::vec3 normal = tmpNormals[face.mIndices[k]];
+					glm::vec2 texCoord = tmpTexCoords[face.mIndices[k]];
 					tmpVIndices.push_back(face.mIndices[k]);
 					meshPositions.push_back(position);
 					meshNormals.push_back(normal);
@@ -330,7 +327,7 @@ public:
 						tmpBoneData[vertexId].boneIndex.push_back(0);
 					}
 				}
-				meshBone[name_of_current_aiBone].boneMatrix = aiMatToVmathMat(bone_mesh->mOffsetMatrix);
+				meshBone[name_of_current_aiBone].boneMatrix = aiMatToGlmMat(bone_mesh->mOffsetMatrix);
 			}
 
 			for (int vIdx = 0; vIdx < tmpVIndices.size(); vIdx++)
@@ -356,12 +353,12 @@ public:
 		boneCount = static_cast<int>(boneName.size());
 
 		//refactor: Bone data saving(from scene)
-		currentBoneMatrices.assign(boneCount, Identity);
+		currentBoneMatrices.assign(boneCount, glm::mat4(1.0f));
 		nodes.clear();
 		saveBoneData(scene->mRootNode, -1);
 		aiMatrix4x4 invRootTransformAssimp = scene->mRootNode->mTransformation;
 		invRootTransformAssimp = invRootTransformAssimp.Inverse();
-		globalInverseRootTransform = aiMatToVmathMat(invRootTransformAssimp);
+		globalInverseRootTransform = aiMatToGlmMat(invRootTransformAssimp);
 
 		//Collect Animation informaiton from FBX Bone file
 		if (loadAnimation(scene, objectFileName) == 0) cerr << objectFileName << " : No animation found" << endl;
@@ -428,8 +425,8 @@ public:
 			double tick = fmod(currentTime * animations[currentAnimationId].tickperSec, animations[currentAnimationId].duration);
 			{
 				CPUProfiler boneProfile(CPUBoneUpdate);
-				currentBoneMatrices.assign(boneCount, Identity);
-				calculateBoneTransformRecursive(tick, 0, Identity, currentBoneMatrices, globalInverseRootTransform, currentAnimationId);
+				currentBoneMatrices.assign(boneCount, glm::mat4(1.0f));
+				calculateBoneTransformRecursive(tick, 0, glm::mat4(1.0f), currentBoneMatrices, globalInverseRootTransform, currentAnimationId);
 			}
 			
 		}
@@ -437,7 +434,7 @@ public:
 
 		//Setting UBO offset
 		glBindBuffer(GL_UNIFORM_BUFFER, UboMatrices);
-		glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(mat4) * currentBoneMatrices.size(), currentBoneMatrices.data());
+		glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(glm::mat4) * currentBoneMatrices.size(), currentBoneMatrices.data());
 
 		glBindBuffer(GL_UNIFORM_BUFFER, 0);
 
@@ -473,14 +470,14 @@ protected:
 		{
 			glBindVertexArray(meshesVAO[i]);
 			glBindBuffer(GL_ARRAY_BUFFER, meshesVBOPosition[i]);
-			glBufferData(GL_ARRAY_BUFFER, positionMesh[i].size() * sizeof(vmath::vec3), &positionMesh[i][0], GL_STATIC_DRAW);
+			glBufferData(GL_ARRAY_BUFFER, positionMesh[i].size() * sizeof(glm::vec3), &positionMesh[i][0], GL_STATIC_DRAW);
 			glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), reinterpret_cast<void*>(0));
 			glEnableVertexAttribArray(0);
 
 			if (!texCoordMesh[i].empty())
 			{
 				glBindBuffer(GL_ARRAY_BUFFER, meshesVBOTexCoord[i]);
-				glBufferData(GL_ARRAY_BUFFER, texCoordMesh[i].size() * sizeof(vmath::vec2), &texCoordMesh[i][0], GL_STATIC_DRAW);
+				glBufferData(GL_ARRAY_BUFFER, texCoordMesh[i].size() * sizeof(glm::vec2), &texCoordMesh[i][0], GL_STATIC_DRAW);
 				glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(GLfloat), reinterpret_cast<void*>(0));
 				glEnableVertexAttribArray(1);
 			}
@@ -488,23 +485,23 @@ protected:
 			if (!normalMesh[i].empty())
 			{
 				glBindBuffer(GL_ARRAY_BUFFER, meshesVBONormal[i]);
-				glBufferData(GL_ARRAY_BUFFER, normalMesh[i].size() * sizeof(vmath::vec3), &normalMesh[i][0], GL_STATIC_DRAW);
+				glBufferData(GL_ARRAY_BUFFER, normalMesh[i].size() * sizeof(glm::vec3), &normalMesh[i][0], GL_STATIC_DRAW);
 				glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), reinterpret_cast<void*>(0));
 				glEnableVertexAttribArray(2);
 			}
 
 			if (!boneDataMesh[i].empty())
 			{
-				vector<ivec4> boneIndicesPerVertex;
-				vector<vec4> boneWeightsPerVertex;
+				vector<glm::ivec4> boneIndicesPerVertex;
+				vector<glm::vec4> boneWeightsPerVertex;
 
 				boneIndicesPerVertex.reserve(boneDataMesh[i].size());
 				boneWeightsPerVertex.reserve(boneDataMesh[i].size());
 
 				for (const auto& vertexBoneData : boneDataMesh[i])
 				{
-					ivec4 indices;
-					vec4 weights;
+					glm::ivec4 indices;
+					glm::vec4 weights;
 					for (int j = 0; j < 4; j++) {
 						indices[j] = (j < vertexBoneData.boneIndex.size()) ? vertexBoneData.boneIndex[j] : 0;
 						weights[j] = (j < vertexBoneData.weight.size()) ? vertexBoneData.weight[j] : 0;
@@ -514,13 +511,13 @@ protected:
 				}
 				
 				glBindBuffer(GL_ARRAY_BUFFER, meshesVBOBoneID[i]);
-				glBufferData(GL_ARRAY_BUFFER, boneIndicesPerVertex.size() * sizeof(ivec4), boneIndicesPerVertex.data(), GL_STATIC_DRAW);
-				glVertexAttribIPointer(3, 4, GL_INT, sizeof(ivec4), reinterpret_cast<void*>(0));
+				glBufferData(GL_ARRAY_BUFFER, boneIndicesPerVertex.size() * sizeof(glm::ivec4), boneIndicesPerVertex.data(), GL_STATIC_DRAW);
+				glVertexAttribIPointer(3, 4, GL_INT, sizeof(glm::ivec4), reinterpret_cast<void*>(0));
 				glEnableVertexAttribArray(3);
 
 				glBindBuffer(GL_ARRAY_BUFFER, meshesVBOWeights[i]);
-				glBufferData(GL_ARRAY_BUFFER, boneWeightsPerVertex.size() * sizeof(vec4), boneWeightsPerVertex.data(), GL_STATIC_DRAW);
-				glVertexAttribPointer(4, 4, GL_FLOAT,GL_FALSE, sizeof(vec4), reinterpret_cast<void*>(0));
+				glBufferData(GL_ARRAY_BUFFER, boneWeightsPerVertex.size() * sizeof(glm::vec4), boneWeightsPerVertex.data(), GL_STATIC_DRAW);
+				glVertexAttribPointer(4, 4, GL_FLOAT,GL_FALSE, sizeof(glm::vec4), reinterpret_cast<void*>(0));
 				glEnableVertexAttribArray(4);
 			}
 
@@ -528,7 +525,7 @@ protected:
 			glBindVertexArray(0);
 		}
 		glBindBuffer(GL_UNIFORM_BUFFER, UboMatrices);
-		glBufferData(GL_UNIFORM_BUFFER, 258 * sizeof(mat4), reinterpret_cast<void*>(0), GL_DYNAMIC_DRAW);
+		glBufferData(GL_UNIFORM_BUFFER, 258 * sizeof(glm::mat4), reinterpret_cast<void*>(0), GL_DYNAMIC_DRAW);
 		glBindBufferBase(GL_UNIFORM_BUFFER, 0, UboMatrices);
 		glBindBuffer(GL_UNIFORM_BUFFER, 0);
 	}	
@@ -546,30 +543,15 @@ protected:
 	}
 
 private:
-	//assimp 라이브러리와 vmath 라이브러리의 행기반 열기반 행렬 변환
-	//TODO: convert to Universal matrix for GLM.
-	mat4 aiMatToVmathMat(aiMatrix4x4 aiMat)
-	{
-		mat4 result;
-		for (int i = 0; i < 4; i++)
-		{
-			for (int j = 0; j < 4; j++)
-			{
-				result[j][i] = aiMat[i][j];
-			}
-		}
-		return result;
-	}
-
 	//Affect all bone using one calculate
 	void calculateBoneTransformRecursive(
 		double tick, int nodeIdx,
-		const mat4& parentGlobalTransform,
-		vector<mat4>& outFinalBoneMatrices,
-		const mat4& globalInverseRootTransform,
+		const glm::mat4& parentGlobalTransform,
+		vector<glm::mat4>& outFinalBoneMatrices,
+		const glm::mat4& globalInverseRootTransform,
 		int currentAnimationId)
 	{
-		mat4 localNodeTransform;
+		glm::mat4 localNodeTransform;
 		glm::mat4 T;
 		glm::mat4 R;
 		glm::mat4 S;
@@ -580,11 +562,11 @@ private:
 			T = glm::translate(glm::mat4(1.0f), pickKey(channel.positionKeys, tick));
 			R = glm::mat4_cast(pickKey(channel.rotationKeys, tick));
 			S = glm::scale(glm::mat4(1.0f), pickKey(channel.scalingKeys, tick));
-			localNodeTransform = glmMatToVmathMat(T * R * S);
+			localNodeTransform = T * R * S;
 		}
-		else localNodeTransform = glmMatToVmathMat(nodes[nodeIdx].localBindTransform);
+		else localNodeTransform = nodes[nodeIdx].localBindTransform;
 		
-		mat4 currentGlobalTransform = parentGlobalTransform * localNodeTransform;
+		glm::mat4 currentGlobalTransform = parentGlobalTransform * localNodeTransform;
 
 		int boneMappedIndex = nodeToBone[nodeIdx];
 		if (boneMappedIndex != -1)
@@ -599,17 +581,6 @@ private:
 		{
 			calculateBoneTransformRecursive(tick, nodes[nodeIdx].children[i], currentGlobalTransform, outFinalBoneMatrices, globalInverseRootTransform, currentAnimationId);
 		}
-	}
-
-	mat4 glmMatToVmathMat(glm::mat4 g) {
-		mat4 temp;
-		for (int col = 0; col < 4; col++) {
-			for (int row = 0; row < 4; row++) {
-				temp[col][row] = g[col][row];
-			}
-		}
-
-		return temp;
 	}
 
 	int saveBoneData(const aiNode* cur, int parentInfo) {
@@ -627,6 +598,7 @@ private:
 		return currInfo;
 	}
 
+	//ai matrices to glm matrices
 	glm::mat4 aiMatToGlmMat(aiMatrix4x4 aiMat)
 	{
 		glm::mat4 result;

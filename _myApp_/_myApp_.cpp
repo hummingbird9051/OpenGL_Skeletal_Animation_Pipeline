@@ -12,6 +12,8 @@
 #include "PostProcessing.h"
 
 using namespace std;
+using namespace vmath;
+
 
 static void glfwErrorCallback(int error, const char* description) {
 	cerr << "GLFW error" << error << ": " << description << endl;

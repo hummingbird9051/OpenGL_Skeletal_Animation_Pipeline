@@ -97,6 +97,8 @@ private:
 	map<string, Bone> meshBone;
 	vector<Bone> meshBoneWithIndex;
 
+	vector<glm::mat4> nodeGlobalTransforms; //global transform per node (indexed by node), used by UpdateAndCalculateMatrix()
+
 	
 
 	int boneCount = 0;
@@ -390,6 +392,8 @@ public:
 			}
 		}
 
+		nodeGlobalTransforms.assign(nodes.size(), glm::mat4(1.0f)); //nodeGlobalTransform initializing(after nodes available)
+
 		nodeToBone.assign(nodes.size(), -1);
 		for (int i = 0; i < nodes.size(); i++) {
 			auto it = boneNameMap.find(nodes[i].name);
@@ -426,7 +430,7 @@ public:
 			{
 				CPUProfiler boneProfile(CPUBoneUpdate);
 				currentBoneMatrices.assign(boneCount, glm::mat4(1.0f));
-				calculateBoneTransformRecursive(tick, 0, glm::mat4(1.0f), currentBoneMatrices, globalInverseRootTransform, currentAnimationId);
+				updateAndCalculateMatrix(tick);
 			}
 			
 		}
@@ -543,43 +547,36 @@ protected:
 	}
 
 private:
-	//Affect all bone using one calculate
-	void calculateBoneTransformRecursive(
-		double tick, int nodeIdx,
-		const glm::mat4& parentGlobalTransform,
-		vector<glm::mat4>& outFinalBoneMatrices,
-		const glm::mat4& globalInverseRootTransform,
-		int currentAnimationId)
-	{
-		glm::mat4 localNodeTransform;
-		glm::mat4 T;
-		glm::mat4 R;
-		glm::mat4 S;
-		// Channel found: build the local transform from interpolated keys. Otherwise use the bind pose.
-		int id = animations[currentAnimationId].nodeToChannel[nodeIdx];
-		if (id != -1) {
-			const Animation::Channel& channel = animations[currentAnimationId].channels[id];
-			T = glm::translate(glm::mat4(1.0f), pickKey(channel.positionKeys, tick));
-			R = glm::mat4_cast(pickKey(channel.rotationKeys, tick));
-			S = glm::scale(glm::mat4(1.0f), pickKey(channel.scalingKeys, tick));
-			localNodeTransform = T * R * S;
-		}
-		else localNodeTransform = nodes[nodeIdx].localBindTransform;
-		
-		glm::mat4 currentGlobalTransform = parentGlobalTransform * localNodeTransform;
+	void updateAndCalculateMatrix(double tick) {
+		for (int nodeIdx = 0; nodeIdx < nodes.size(); nodeIdx++) {
+			glm::mat4 localNodeTransform;
+			glm::mat4 T;
+			glm::mat4 R;
+			glm::mat4 S;
 
-		int boneMappedIndex = nodeToBone[nodeIdx];
-		if (boneMappedIndex != -1)
-		{
-			if (boneMappedIndex < outFinalBoneMatrices.size())
-			{
-				outFinalBoneMatrices[boneMappedIndex] = globalInverseRootTransform * currentGlobalTransform * meshBoneWithIndex[boneMappedIndex].boneMatrix;
+			// Channel found: build the local transform from interpolated keys. Otherwise use the bind pose.
+			int id = animations[currentAnimationId].nodeToChannel[nodeIdx];
+			if (id != -1) {
+				const Animation::Channel& channel = animations[currentAnimationId].channels[id];
+				T = glm::translate(glm::mat4(1.0f), pickKey(channel.positionKeys, tick));
+				R = glm::mat4_cast(pickKey(channel.rotationKeys, tick));
+				S = glm::scale(glm::mat4(1.0f), pickKey(channel.scalingKeys, tick));
+				localNodeTransform = T * R * S;
 			}
-		}
+			else localNodeTransform = nodes[nodeIdx].localBindTransform;
+			int p = nodes[nodeIdx].parent;
 
-		for (unsigned int i = 0; i < nodes[nodeIdx].children.size(); i++)
-		{
-			calculateBoneTransformRecursive(tick, nodes[nodeIdx].children[i], currentGlobalTransform, outFinalBoneMatrices, globalInverseRootTransform, currentAnimationId);
+			if (p == -1) nodeGlobalTransforms[nodeIdx] = localNodeTransform;
+			else nodeGlobalTransforms[nodeIdx] = nodeGlobalTransforms[p] * localNodeTransform;
+			
+			int boneMappedIndex = nodeToBone[nodeIdx];
+			if (boneMappedIndex != -1)
+			{
+				if (boneMappedIndex < currentBoneMatrices.size())
+				{
+					currentBoneMatrices[boneMappedIndex] = globalInverseRootTransform * nodeGlobalTransforms[nodeIdx] * meshBoneWithIndex[boneMappedIndex].boneMatrix;
+				}
+			}
 		}
 	}
 

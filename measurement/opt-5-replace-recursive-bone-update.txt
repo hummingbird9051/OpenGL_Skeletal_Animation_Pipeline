@@ -1,0 +1,185 @@
+opt-5-replace-recursive-bone-update-with-linear-loop
+
+#Run1
+
+- 1 model
+    
+    CPUBoneUpdate's average period : 0.0294664
+    CPUFrame's average period : 0.368966
+    CPUSubmit's average period : 0.04459
+    GPURendering's time average for 1sec is 0.172338ms
+    CPUBoneUpdate's average period : 0.0242863
+    CPUFrame's average period : 0.304826
+    CPUSubmit's average period : 0.038695
+    GPURendering's time average for 1sec is 0.165644ms
+    CPUBoneUpdate's average period : 0.027792
+    CPUFrame's average period : 0.307104
+    CPUSubmit's average period : 0.0415013
+    GPURendering's time average for 1sec is 0.166469ms
+    CPUBoneUpdate's average period : 0.0239192
+    CPUFrame's average period : 0.296564
+    CPUSubmit's average period : 0.0367723
+    GPURendering's time average for 1sec is 0.164162ms
+    
+- 10 models
+    
+    CPUBoneUpdate's average period : 0.0256648
+    CPUFrame's average period : 1.05638
+    CPUSubmit's average period : 0.303286
+    GPURendering's time average for 1sec is 0.747881ms
+    CPUBoneUpdate's average period : 0.020234
+    CPUFrame's average period : 0.885281
+    CPUSubmit's average period : 0.242456
+    GPURendering's time average for 1sec is 0.735275ms
+    CPUBoneUpdate's average period : 0.0227071
+    CPUFrame's average period : 0.876175
+    CPUSubmit's average period : 0.265663
+    GPURendering's time average for 1sec is 0.737721ms
+    CPUBoneUpdate's average period : 0.0193615
+    CPUFrame's average period : 0.868712
+    CPUSubmit's average period : 0.232591
+    GPURendering's time average for 1sec is 0.730402ms
+    
+- 100 models
+    
+    CPUBoneUpdate's average period : 0.0174881
+    CPUFrame's average period : 7.85306
+    CPUSubmit's average period : 2.06118
+    GPURendering's time average for 1sec is 6.83584ms
+    CPUBoneUpdate's average period : 0.017248
+    CPUFrame's average period : 7.13432
+    CPUSubmit's average period : 2.01103
+    GPURendering's time average for 1sec is 6.82164ms
+    CPUBoneUpdate's average period : 0.0180584
+    CPUFrame's average period : 7.02854
+    CPUSubmit's average period : 2.09347
+    GPURendering's time average for 1sec is 6.75444ms
+    CPUBoneUpdate's average period : 0.0172705
+    CPUFrame's average period : 7.14608
+    CPUSubmit's average period : 2.03081
+    GPURendering's time average for 1sec is 6.8584ms
+    
+
+#Run2
+
+- 1 model
+    
+    CPUBoneUpdate's average period : 0.0305553
+    CPUFrame's average period : 0.347796
+    CPUSubmit's average period : 0.0458917
+    GPURendering's time average for 1sec is 0.165318ms
+    CPUBoneUpdate's average period : 0.0238497
+    CPUFrame's average period : 0.296671
+    CPUSubmit's average period : 0.0374125
+    GPURendering's time average for 1sec is 0.163779ms
+    CPUBoneUpdate's average period : 0.0274447
+    CPUFrame's average period : 0.290252
+    CPUSubmit's average period : 0.0403281
+    GPURendering's time average for 1sec is 0.162573ms
+    CPUBoneUpdate's average period : 0.024329
+    CPUFrame's average period : 0.298411
+    CPUSubmit's average period : 0.0376463
+    GPURendering's time average for 1sec is 0.164009ms
+    
+- 10 models
+    
+    CPUBoneUpdate's average period : 0.0284477
+    CPUFrame's average period : 1.08461
+    CPUSubmit's average period : 0.333484
+    GPURendering's time average for 1sec is 0.758305ms
+    CPUBoneUpdate's average period : 0.0198968
+    CPUFrame's average period : 0.905293
+    CPUSubmit's average period : 0.240478
+    GPURendering's time average for 1sec is 0.752846ms
+    CPUBoneUpdate's average period : 0.0223892
+    CPUFrame's average period : 0.882934
+    CPUSubmit's average period : 0.262419
+    GPURendering's time average for 1sec is 0.737161ms
+    CPUBoneUpdate's average period : 0.0192538
+    CPUFrame's average period : 1.00972
+    CPUSubmit's average period : 0.232965
+    GPURendering's time average for 1sec is 0.74538ms
+    
+- 100 models
+    
+    CPUBoneUpdate's average period : 0.0170065
+    CPUFrame's average period : 7.85964
+    CPUSubmit's average period : 2.03173
+    GPURendering's time average for 1sec is 6.94738ms
+    CPUBoneUpdate's average period : 0.0173952
+    CPUFrame's average period : 7.31783
+    CPUSubmit's average period : 2.04607
+    GPURendering's time average for 1sec is 6.91363ms
+    CPUBoneUpdate's average period : 0.0181056
+    CPUFrame's average period : 7.05167
+    CPUSubmit's average period : 2.09798
+    GPURendering's time average for 1sec is 6.79486ms
+    CPUBoneUpdate's average period : 0.0171654
+    CPUFrame's average period : 7.02222
+    CPUSubmit's average period : 1.99656
+    GPURendering's time average for 1sec is 6.8155ms
+    
+
+#Run3
+
+- 1 model
+    
+    CPUBoneUpdate's average period : 0.0320949
+    CPUFrame's average period : 0.361961
+    CPUSubmit's average period : 0.0488663
+    GPURendering's time average for 1sec is 0.166989ms
+    CPUBoneUpdate's average period : 0.0241189
+    CPUFrame's average period : 0.297914
+    CPUSubmit's average period : 0.0374567
+    GPURendering's time average for 1sec is 0.164348ms
+    CPUBoneUpdate's average period : 0.0286824
+    CPUFrame's average period : 0.294786
+    CPUSubmit's average period : 0.0423495
+    GPURendering's time average for 1sec is 0.164137ms
+    CPUBoneUpdate's average period : 0.0237702
+    CPUFrame's average period : 0.300716
+    CPUSubmit's average period : 0.0380366
+    GPURendering's time average for 1sec is 0.165192ms
+    
+- 10 models
+    
+    CPUBoneUpdate's average period : 0.027043
+    CPUFrame's average period : 1.07255
+    CPUSubmit's average period : 0.319668
+    GPURendering's time average for 1sec is 0.765292ms
+    CPUBoneUpdate's average period : 0.0203702
+    CPUFrame's average period : 0.910904
+    CPUSubmit's average period : 0.246062
+    GPURendering's time average for 1sec is 0.754183ms
+    CPUBoneUpdate's average period : 0.0220993
+    CPUFrame's average period : 0.876336
+    CPUSubmit's average period : 0.258414
+    GPURendering's time average for 1sec is 0.739167ms
+    CPUBoneUpdate's average period : 0.0191571
+    CPUFrame's average period : 1.00288
+    CPUSubmit's average period : 0.230208
+    GPURendering's time average for 1sec is 0.739962ms
+    
+- 100 models
+    
+    CPUBoneUpdate's average period : 0.0167091
+    CPUFrame's average period : 7.83588
+    CPUSubmit's average period : 1.97638
+    GPURendering's time average for 1sec is 6.88381ms
+    CPUBoneUpdate's average period : 0.0175825
+    CPUFrame's average period : 7.19367
+    CPUSubmit's average period : 2.05463
+    GPURendering's time average for 1sec is 6.86041ms
+    CPUBoneUpdate's average period : 0.0177121
+    CPUFrame's average period : 7.06906
+    CPUSubmit's average period : 2.05448
+    GPURendering's time average for 1sec is 6.82883ms
+    CPUBoneUpdate's average period : 0.0174819
+    CPUFrame's average period : 7.30744
+    CPUSubmit's average period : 2.05779
+    GPURendering's time average for 1sec is 7.05962ms
+    
+    | Model 	| Bone/1T (opt4 → opt5) | CPUSubmit 	| CPUFrame 	| GPU 		|
+    | 1 	| 0.0257 → 0.0254 	| 0.040 → 0.039 | 0.296 → 0.299 | 0.166 → 0.165 |
+    | 10 	| 0.0221 → 0.0206 (−7%) | 0.264 → 0.246 | 0.924 → 0.913 | 0.770 → 0.741 |
+    | 100 	| 0.0177 → 0.0176 	| 2.05 → 2.05 	| 7.32 → 7.14 	| 6.93 → 6.86 	|

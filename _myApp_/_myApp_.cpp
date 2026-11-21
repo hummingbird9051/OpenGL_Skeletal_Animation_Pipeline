@@ -349,7 +349,7 @@ public:
 
 				const GLint uniformAddress = glGetUniformLocation(shader_program, "model");
 
-				int modelAmount = 1;
+				int modelAmount = 100;
 				int columns = 10;
 				for (int i = 0; i < modelAmount; i++) {
 					glm::vec3 pos = glm::vec3(static_cast<float>(i % columns * 0.6), 0.0f, static_cast<float>(i / columns * 0.6));

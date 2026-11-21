@@ -13,7 +13,15 @@ using namespace std;
 int main() {
 	Assimp::Importer ipt; // Assimp Importer variable
 	ipt.SetPropertyBool(AI_CONFIG_IMPORT_FBX_PRESERVE_PIVOTS, false); // Merge $AssimpFbx$ helper nodes (PreRotation, Translation...) into each bone. Skeleton and animation files must use the same setting.
-	const aiScene* scene = ipt.ReadFile("assets/anim/Walking.fbx", 0); // import scene(FBX metadata)
+	unsigned int flags = aiProcess_GenSmoothNormals |
+		aiProcess_CalcTangentSpace |
+		aiProcess_SortByPType |
+		aiProcess_Triangulate |
+		aiProcess_JoinIdenticalVertices |
+		aiProcess_FindInvalidData |
+		aiProcess_FindDegenerates |
+		aiProcess_ImproveCacheLocality;
+	const aiScene* scene = ipt.ReadFile("assets/anim/Walking.fbx", flags); // import scene(FBX metadata)
 
 	if (!scene) { // if FBX file is not valid or available, return
 		cout << "Failed to load : " << ipt.GetErrorString() << endl;
@@ -26,6 +34,7 @@ int main() {
 	int countAnim = scene->mNumAnimations;
 	cout << "Animation Count : " << countAnim << endl;
 	
+	/*
 	//animation print
 	for (int i = 0; i < scene->mNumAnimations; i++) {
 		aiAnimation* anim = scene->mAnimations[i];
@@ -106,7 +115,21 @@ int main() {
 	cout << "NodeCounts : " << countNodes << endl;
 	cout << "BoneAllReferenceCounts : " << countAllBonesReference << endl;
 	cout << "BoneCounts : " << countBones << endl;
+	*/
 	
-	
+
+	int indicesSum = 0;
+	int verticesSum = 0;
+	for (int i = 0; i < scene->mNumMeshes; i++) {
+		aiMesh* mesh = scene->mMeshes[i];
+		verticesSum += mesh->mNumVertices;
+		for (int j = 0; j < mesh->mNumFaces; j++) {
+			aiFace face = mesh->mFaces[j];
+			indicesSum += face.mNumIndices;
+		}
+	}
+
+	cout << "Model's Indices amount : " << indicesSum << endl;
+	cout << "Model's Vertices amount : " << verticesSum << endl;
 	
 }

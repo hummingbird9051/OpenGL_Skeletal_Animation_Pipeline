@@ -7,6 +7,9 @@
 #include<memory>
 #include<glm/glm.hpp>
 
+#include "imgui.h"
+#include "imgui_impl_glfw.h"
+#include "imgui_impl_opengl3.h"
 #include "FBXModel.h"
 #include "PostProcessing.h"
 
@@ -198,6 +201,10 @@ public:
 
 		glEnable(GL_MULTISAMPLE);
 
+		ImGui::CreateContext();
+		ImGui_ImplGlfw_InitForOpenGL(window, true);
+		ImGui_ImplOpenGL3_Init("#version 450");
+
 	}
 
 	// 애플리케이션 끝날 때 호출된다.
@@ -213,7 +220,9 @@ public:
 
 		//Delete GPUProfiler object
 		delete gpuProfiler;
-
+		ImGui_ImplOpenGL3_Shutdown();
+		ImGui_ImplGlfw_Shutdown();
+		ImGui::DestroyContext();
 		glfwDestroyWindow(window);
 	}
 
@@ -390,6 +399,15 @@ public:
 			gpuProfiler->endQuery(GPURendering);
 			
 		}
+
+		ImGui_ImplOpenGL3_NewFrame();
+		ImGui_ImplGlfw_NewFrame();
+		ImGui::NewFrame();
+		ImGui::ShowDemoWindow();
+		ImGui::Render();
+		ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+
+
 		gpuProfiler->printQuery();
 		gpuProfiler->nextFrame();
 

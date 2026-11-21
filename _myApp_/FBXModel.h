@@ -425,6 +425,7 @@ public:
 		{
 			//Setting UBO offset
 			glBindBuffer(GL_UNIFORM_BUFFER, UboMatrices);
+			glBufferData(GL_UNIFORM_BUFFER, currentSkinningEachMeshes[i].size() * sizeof(glm::mat4), nullptr, GL_DYNAMIC_DRAW);
 			glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(glm::mat4) * currentSkinningEachMeshes[i].size(), currentSkinningEachMeshes[i].data());
 
 			glBindBuffer(GL_UNIFORM_BUFFER, 0);

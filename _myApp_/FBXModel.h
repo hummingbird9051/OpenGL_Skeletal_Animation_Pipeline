@@ -53,6 +53,11 @@ private:
 		vector<int> children;
 	};
 
+	struct JointsFromMesh {
+		vector<int> jointNodeIds;
+		vector<glm::mat4> inverseBindMatrices;
+	};
+
 	struct ShaderInfo {
 		GLuint shaderId = 0;
 
@@ -89,6 +94,9 @@ private:
 	GLuint UboMatrices = 0;
 
 	vector<GLuint> meshesTexture;
+
+	vector<JointsFromMesh> jointsFromMeshes;
+	vector<vector<glm::mat4>> currentSkinningEachMeshes;
 
 	vector<vector<glm::vec3>> positionMesh;
 	vector<vector<glm::vec2>> texCoordMesh;
@@ -239,12 +247,18 @@ public:
 			return;
 		}
 
+		std::unordered_map<string, int> nameToNodeId;
+
 		//refactor: Bone data saving(from scene)
 		nodes.clear();
 		saveBoneData(scene->mRootNode, -1);
 		aiMatrix4x4 invRootTransformAssimp = scene->mRootNode->mTransformation;
 		invRootTransformAssimp = invRootTransformAssimp.Inverse();
 		globalInverseRootTransform = aiMatToGlmMat(invRootTransformAssimp);
+
+		for (int nodesId = 0; nodesId < nodes.size(); nodesId++) {
+			nameToNodeId[nodes[nodesId].name] = nodesId;
+		}
 
 		//Collect Mesh Information
 		boneDataMesh.resize(scene->mNumMeshes);
@@ -306,9 +320,24 @@ public:
 			meshesEBO.push_back(0);
 			meshesTexture.push_back(0);
 
+			JointsFromMesh tempJointFromMesh;
+
+			tempJointFromMesh.jointNodeIds.assign(mesh->mNumBones, -1);
+			tempJointFromMesh.inverseBindMatrices.assign(mesh->mNumBones, glm::mat4(1.0f));
+
 			for (unsigned int boneMeshId = 0; boneMeshId < mesh->mNumBones; boneMeshId++)
 			{
 				aiBone* bone_mesh = mesh->mBones[boneMeshId];
+
+				auto it = nameToNodeId.find(bone_mesh->mName.C_Str());
+				if (it != nameToNodeId.end()) {
+					tempJointFromMesh.jointNodeIds[boneMeshId] = it->second;
+					tempJointFromMesh.inverseBindMatrices[boneMeshId] = aiMatToGlmMat(bone_mesh->mOffsetMatrix);
+				}
+				else {
+					std::cerr << "Can't find the joint's name" << bone_mesh->mName.C_Str() << std::endl;
+				}
+
 				if (find(boneName.begin(), boneName.end(), bone_mesh->mName.C_Str()) == boneName.end())
 				{
 					boneName.push_back(bone_mesh->mName.C_Str());
@@ -322,7 +351,7 @@ public:
 					if (tmpBoneData[vertexId].name.size() < 4) {
 						tmpBoneData[vertexId].name.push_back(name_of_current_aiBone);
 						tmpBoneData[vertexId].weight.push_back(weight_val);
-						tmpBoneData[vertexId].boneIndex.push_back(0);
+						tmpBoneData[vertexId].boneIndex.push_back(boneMeshId);
 					}
 					else {
 						int minIdx = 0;
@@ -336,12 +365,13 @@ public:
 						if (minWeight < weight_val) {
 							tmpBoneData[vertexId].weight[minIdx] = weight_val;
 							tmpBoneData[vertexId].name[minIdx] = name_of_current_aiBone;
-							tmpBoneData[vertexId].boneIndex[minIdx] = 0;
+							tmpBoneData[vertexId].boneIndex[minIdx] = boneMeshId;
 						}
 					}
 				}
 				meshBone[name_of_current_aiBone].boneMatrix = aiMatToGlmMat(bone_mesh->mOffsetMatrix);
 			}
+			jointsFromMeshes.push_back(tempJointFromMesh);
 
 
 			for (int vIdx = 0; vIdx < tmpBoneData.size(); vIdx++)
@@ -365,6 +395,12 @@ public:
 				boneDataMesh[meshIdx].push_back(currentBoneData);
 			}
 
+		}
+
+		//make space for each draw call's skinning calculation val
+		currentSkinningEachMeshes.assign(jointsFromMeshes.size(), vector<glm::mat4>());
+		for (int i = 0; i < jointsFromMeshes.size(); i++) {
+			currentSkinningEachMeshes[i].assign(jointsFromMeshes[i].inverseBindMatrices.size(), glm::mat4(1.0f));
 		}
 
 		//cout << boneName.size() << endl;
@@ -395,17 +431,17 @@ public:
 		
 
 
-		//Saving Bone weigh and indices each vertex
-		for (int meshIdx = 0; meshIdx < boneDataMesh.size(); meshIdx++)
-		{
-			for (int meshVertex = 0; meshVertex < boneDataMesh[meshIdx].size(); meshVertex++)
-			{
-				for (int i = 0; i < boneDataMesh[meshIdx][meshVertex].name.size(); i++)
-				{
-					boneDataMesh[meshIdx][meshVertex].boneIndex[i] = boneNameMap[boneDataMesh[meshIdx][meshVertex].name[i]];
-				}
-			}
-		}
+		////Saving Bone weigh and indices each vertex
+		//for (int meshIdx = 0; meshIdx < boneDataMesh.size(); meshIdx++)
+		//{
+		//	for (int meshVertex = 0; meshVertex < boneDataMesh[meshIdx].size(); meshVertex++)
+		//	{
+		//		for (int i = 0; i < boneDataMesh[meshIdx][meshVertex].name.size(); i++)
+		//		{
+		//			boneDataMesh[meshIdx][meshVertex].boneIndex[i] = boneNameMap[boneDataMesh[meshIdx][meshVertex].name[i]];
+		//		}
+		//	}
+		//}
 
 		nodeGlobalTransforms.assign(nodes.size(), glm::mat4(1.0f)); //nodeGlobalTransform initializing(after nodes available)
 
@@ -451,14 +487,13 @@ public:
 		}
 		
 
-		//Setting UBO offset
-		glBindBuffer(GL_UNIFORM_BUFFER, UboMatrices);
-		glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(glm::mat4) * currentBoneMatrices.size(), currentBoneMatrices.data());
-
-		glBindBuffer(GL_UNIFORM_BUFFER, 0);
-
 		for (int i = 0; i < meshesVAO.size(); i++)
 		{
+			//Setting UBO offset
+			glBindBuffer(GL_UNIFORM_BUFFER, UboMatrices);
+			glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(glm::mat4) * currentSkinningEachMeshes[i].size(), currentSkinningEachMeshes[i].data());
+
+			glBindBuffer(GL_UNIFORM_BUFFER, 0);
 
 			glUniform1i(shaderInfo.ulUseNormal, (int)normalMesh[i].size());
 			glUniform1f(shaderInfo.ulShininess, shininess);
@@ -595,6 +630,12 @@ private:
 				{
 					currentBoneMatrices[boneMappedIndex] = globalInverseRootTransform * nodeGlobalTransforms[nodeIdx] * meshBoneWithIndex[boneMappedIndex].boneMatrix;
 				}
+			}
+		}
+		for (int i = 0; i < jointsFromMeshes.size(); i++) {
+			for (int j = 0; j < jointsFromMeshes[i].jointNodeIds.size(); j++) {
+				if (jointsFromMeshes[i].jointNodeIds[j] == -1) currentSkinningEachMeshes[i][j] = glm::mat4(1.0f);
+				else currentSkinningEachMeshes[i][j] = globalInverseRootTransform * nodeGlobalTransforms[jointsFromMeshes[i].jointNodeIds[j]] * jointsFromMeshes[i].inverseBindMatrices[j];
 			}
 		}
 	}

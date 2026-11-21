@@ -239,6 +239,12 @@ public:
 			return;
 		}
 
+		//refactor: Bone data saving(from scene)
+		nodes.clear();
+		saveBoneData(scene->mRootNode, -1);
+		aiMatrix4x4 invRootTransformAssimp = scene->mRootNode->mTransformation;
+		invRootTransformAssimp = invRootTransformAssimp.Inverse();
+		globalInverseRootTransform = aiMatToGlmMat(invRootTransformAssimp);
 
 		//Collect Mesh Information
 		boneDataMesh.resize(scene->mNumMeshes);
@@ -347,6 +353,15 @@ public:
 				while (currentBoneData.boneIndex.size() < 4) {
 					currentBoneData.boneIndex.push_back(0);
 				}
+				float weightSum = 0;
+				for (int wId = 0; wId < 4; wId++) {
+					weightSum += currentBoneData.weight[wId];
+				}
+				if (weightSum != 0) {
+					for (int wId = 0; wId < 4; wId++) {
+						currentBoneData.weight[wId] = currentBoneData.weight[wId] / weightSum;
+					}
+				}
 				boneDataMesh[meshIdx].push_back(currentBoneData);
 			}
 
@@ -360,13 +375,7 @@ public:
 		}
 		boneCount = static_cast<int>(boneName.size());
 
-		//refactor: Bone data saving(from scene)
 		currentBoneMatrices.assign(boneCount, glm::mat4(1.0f));
-		nodes.clear();
-		saveBoneData(scene->mRootNode, -1);
-		aiMatrix4x4 invRootTransformAssimp = scene->mRootNode->mTransformation;
-		invRootTransformAssimp = invRootTransformAssimp.Inverse();
-		globalInverseRootTransform = aiMatToGlmMat(invRootTransformAssimp);
 
 		//Collect Animation informaiton from FBX Bone file
 		if (loadAnimation(scene, objectFileName) == 0) cerr << objectFileName << " : No animation found" << endl;

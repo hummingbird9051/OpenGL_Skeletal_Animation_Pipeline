@@ -13,16 +13,11 @@ struct VertexBoneData
 {
 	vector<float> weight;
 	vector<int> boneIndex;
-	vector<string> name;
 };
 
 class FBXModel : public Model
 {
 private:
-	struct Bone
-	{
-		glm::mat4 boneMatrix = glm::mat4(1.0f);
-	};
 	struct Animation {
 		struct Channel {
 			struct VectorKey {
@@ -82,8 +77,6 @@ private:
 
 	glm::mat4 globalInverseRootTransform = glm::mat4(1.0f);
 
-	vector<glm::mat4> currentBoneMatrices; //save bone matrices each frame
-
 	vector<GLuint> meshesVAO;
 	vector<GLuint> meshesVBOPosition;
 	vector<GLuint> meshesVBONormal;
@@ -96,26 +89,16 @@ private:
 	vector<GLuint> meshesTexture;
 
 	vector<JointsFromMesh> jointsFromMeshes;
-	vector<vector<glm::mat4>> currentSkinningEachMeshes;
+	vector<vector<glm::mat4>> currentSkinningEachMeshes; // Skinning value with each meshes joints
 
 	vector<vector<glm::vec3>> positionMesh;
 	vector<vector<glm::vec2>> texCoordMesh;
 	vector<vector<glm::vec3>> normalMesh;
 	vector<vector<GLuint>> vIndicesMesh;
-	vector<vector<VertexBoneData>> boneDataMesh;					//vbo로 넘길 버텍스별 본과의 관계
-
-	map<string, Bone> meshBone;
-	vector<Bone> meshBoneWithIndex;
+	vector<vector<VertexBoneData>> boneDataMesh;					//relationship with vertex and bone
 
 	vector<glm::mat4> nodeGlobalTransforms; //global transform per node (indexed by node), used by UpdateAndCalculateMatrix()
 
-	
-
-	int boneCount = 0;
-
-	vector<string> boneName;
-	map<string, int> boneNameMap;
-	vector<int> nodeToBone;
 
 	int loadAnimation(const aiScene* scene, string originalFileName) {
 		if (scene->mNumAnimations == 0) {
@@ -338,18 +321,12 @@ public:
 					std::cerr << "Can't find the joint's name" << bone_mesh->mName.C_Str() << std::endl;
 				}
 
-				if (find(boneName.begin(), boneName.end(), bone_mesh->mName.C_Str()) == boneName.end())
-				{
-					boneName.push_back(bone_mesh->mName.C_Str());
-				}
-				string name_of_current_aiBone = bone_mesh->mName.C_Str();
 				for (unsigned int id = 0; id < bone_mesh->mNumWeights; id++) {
 					int vertexId = bone_mesh->mWeights[id].mVertexId;
 					float weight_val = bone_mesh->mWeights[id].mWeight;
 
 
-					if (tmpBoneData[vertexId].name.size() < 4) {
-						tmpBoneData[vertexId].name.push_back(name_of_current_aiBone);
+					if (tmpBoneData[vertexId].weight.size() < 4) {
 						tmpBoneData[vertexId].weight.push_back(weight_val);
 						tmpBoneData[vertexId].boneIndex.push_back(boneMeshId);
 					}
@@ -364,12 +341,10 @@ public:
 						}
 						if (minWeight < weight_val) {
 							tmpBoneData[vertexId].weight[minIdx] = weight_val;
-							tmpBoneData[vertexId].name[minIdx] = name_of_current_aiBone;
 							tmpBoneData[vertexId].boneIndex[minIdx] = boneMeshId;
 						}
 					}
 				}
-				meshBone[name_of_current_aiBone].boneMatrix = aiMatToGlmMat(bone_mesh->mOffsetMatrix);
 			}
 			jointsFromMeshes.push_back(tempJointFromMesh);
 
@@ -403,15 +378,6 @@ public:
 			currentSkinningEachMeshes[i].assign(jointsFromMeshes[i].inverseBindMatrices.size(), glm::mat4(1.0f));
 		}
 
-		//cout << boneName.size() << endl;
-		boneNameMap.clear();
-		for (int i = 0; i < boneName.size(); i++)
-		{
-			boneNameMap[boneName[i]] = i;
-		}
-		boneCount = static_cast<int>(boneName.size());
-
-		currentBoneMatrices.assign(boneCount, glm::mat4(1.0f));
 
 		//Collect Animation informaiton from FBX Bone file
 		if (loadAnimation(scene, objectFileName) == 0) cerr << objectFileName << " : No animation found" << endl;
@@ -428,39 +394,8 @@ public:
 				cerr << animationFileName[fileCount] << " : No animation found" << endl;
 			}
 		}
-		
-
-
-		////Saving Bone weigh and indices each vertex
-		//for (int meshIdx = 0; meshIdx < boneDataMesh.size(); meshIdx++)
-		//{
-		//	for (int meshVertex = 0; meshVertex < boneDataMesh[meshIdx].size(); meshVertex++)
-		//	{
-		//		for (int i = 0; i < boneDataMesh[meshIdx][meshVertex].name.size(); i++)
-		//		{
-		//			boneDataMesh[meshIdx][meshVertex].boneIndex[i] = boneNameMap[boneDataMesh[meshIdx][meshVertex].name[i]];
-		//		}
-		//	}
-		//}
 
 		nodeGlobalTransforms.assign(nodes.size(), glm::mat4(1.0f)); //nodeGlobalTransform initializing(after nodes available)
-
-		nodeToBone.assign(nodes.size(), -1);
-		for (int i = 0; i < nodes.size(); i++) {
-			auto it = boneNameMap.find(nodes[i].name);
-			if (it != boneNameMap.end()) {
-				nodeToBone[i] = it->second;
-			}
-		}
-
-		meshBoneWithIndex.assign(boneCount, Bone());
-		for (auto it : meshBone) {
-			auto boneNameIt = boneNameMap.find(it.first);
-			if (boneNameIt != boneNameMap.end()) {
-				meshBoneWithIndex[boneNameIt->second] = it.second;
-			}
-		}
-
 
 		this->init();
 		prepareBuffers();
@@ -480,7 +415,6 @@ public:
 			double tick = fmod(currentTime * animations[currentAnimationId].tickperSec, animations[currentAnimationId].duration);
 			{
 				CPUProfiler boneProfile(CPUBoneUpdate);
-				currentBoneMatrices.assign(boneCount, glm::mat4(1.0f));
 				updateAndCalculateMatrix(tick);
 			}
 			
@@ -622,15 +556,6 @@ private:
 
 			if (p == -1) nodeGlobalTransforms[nodeIdx] = localNodeTransform;
 			else nodeGlobalTransforms[nodeIdx] = nodeGlobalTransforms[p] * localNodeTransform;
-			
-			int boneMappedIndex = nodeToBone[nodeIdx];
-			if (boneMappedIndex != -1)
-			{
-				if (boneMappedIndex < currentBoneMatrices.size())
-				{
-					currentBoneMatrices[boneMappedIndex] = globalInverseRootTransform * nodeGlobalTransforms[nodeIdx] * meshBoneWithIndex[boneMappedIndex].boneMatrix;
-				}
-			}
 		}
 		for (int i = 0; i < jointsFromMeshes.size(); i++) {
 			for (int j = 0; j < jointsFromMeshes[i].jointNodeIds.size(); j++) {

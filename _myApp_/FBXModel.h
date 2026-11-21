@@ -85,6 +85,7 @@ private:
 	vector<GLuint> meshesVBOTexCoord;
 	vector<GLuint> meshesVBOBoneID;
 	vector<GLuint> meshesVBOWeights;
+	vector<GLuint> meshesEBO;
 	GLuint UboMatrices = 0;
 
 	vector<GLuint> meshesTexture;
@@ -92,6 +93,7 @@ private:
 	vector<vector<glm::vec3>> positionMesh;
 	vector<vector<glm::vec2>> texCoordMesh;
 	vector<vector<glm::vec3>> normalMesh;
+	vector<vector<GLuint>> vIndicesMesh;
 	vector<vector<VertexBoneData>> boneDataMesh;					//vbo로 넘길 버텍스별 본과의 관계
 
 	map<string, Bone> meshBone;
@@ -180,6 +182,7 @@ public:
 			glDeleteBuffers(1, &meshesVBOBoneID[i]);
 			glDeleteBuffers(1, &meshesVBOWeights[i]);
 			glDeleteTextures(1, &meshesTexture[i]);
+			glDeleteBuffers(1, &meshesEBO[i]);
 		}
 		glDeleteBuffers(1, &UboMatrices);
 	}
@@ -194,6 +197,7 @@ public:
 			glGenBuffers(1, &meshesVBOBoneID[i]);
 			glGenBuffers(1, &meshesVBOWeights[i]);
 			glGenTextures(1, &meshesTexture[i]);
+			glGenBuffers(1, &meshesEBO[i]);
 		}
 		glGenBuffers(1, &UboMatrices);
 	}
@@ -247,11 +251,6 @@ public:
 			vector<GLuint> tmpVIndices;
 			vector<VertexBoneData> tmpBoneData;
 
-
-			vector<glm::vec3> meshPositions;
-			vector<glm::vec2> meshTexCoords;
-			vector<glm::vec3> meshNormals;
-
 			//cout << mesh->mName.C_Str() << std::endl;
 			//collect vertex information
 			tmpBoneData.resize(mesh->mNumVertices);
@@ -278,28 +277,18 @@ public:
 					vTexCoord = aiVector2D(0.0f, 0.0f);
 				}
 				tmpTexCoords.push_back(glm::vec2(vTexCoord.x, vTexCoord.y));
-
 			}
-
-
-
-			for (unsigned i = 0; i < mesh->mNumFaces; ++i)
-			{
-				const aiFace& face = mesh->mFaces[i];
-				for (unsigned k = 0; k < face.mNumIndices; ++k)
-				{
-					glm::vec3 position = tmpPositions[face.mIndices[k]];
-					glm::vec3 normal = tmpNormals[face.mIndices[k]];
-					glm::vec2 texCoord = tmpTexCoords[face.mIndices[k]];
-					tmpVIndices.push_back(face.mIndices[k]);
-					meshPositions.push_back(position);
-					meshNormals.push_back(normal);
-					meshTexCoords.push_back(texCoord);
+			for (unsigned i = 0; i < mesh->mNumFaces; i++) {
+				aiFace face = mesh->mFaces[i];
+				for (int j = 0; j < face.mNumIndices; j++) {
+					tmpVIndices.push_back(face.mIndices[j]);
 				}
 			}
-			positionMesh.push_back(meshPositions);
-			normalMesh.push_back(meshNormals);
-			texCoordMesh.push_back(meshTexCoords);
+			positionMesh.push_back(tmpPositions);
+			normalMesh.push_back(tmpNormals);
+			texCoordMesh.push_back(tmpTexCoords);
+			vIndicesMesh.push_back(tmpVIndices);
+
 
 
 			meshesVAO.push_back(0);
@@ -308,6 +297,7 @@ public:
 			meshesVBOTexCoord.push_back(0);
 			meshesVBOBoneID.push_back(0);
 			meshesVBOWeights.push_back(0);
+			meshesEBO.push_back(0);
 			meshesTexture.push_back(0);
 
 			for (unsigned int boneMeshId = 0; boneMeshId < mesh->mNumBones; boneMeshId++)
@@ -328,13 +318,29 @@ public:
 						tmpBoneData[vertexId].weight.push_back(weight_val);
 						tmpBoneData[vertexId].boneIndex.push_back(0);
 					}
+					else {
+						int minIdx = 0;
+						float minWeight = 1;
+						for (int wId = 0; wId < tmpBoneData[vertexId].weight.size(); wId++) {
+							if (tmpBoneData[vertexId].weight[wId] < minWeight) {
+								minWeight = tmpBoneData[vertexId].weight[wId];
+								minIdx = wId;
+							}
+						}
+						if (minWeight < weight_val) {
+							tmpBoneData[vertexId].weight[minIdx] = weight_val;
+							tmpBoneData[vertexId].name[minIdx] = name_of_current_aiBone;
+							tmpBoneData[vertexId].boneIndex[minIdx] = 0;
+						}
+					}
 				}
 				meshBone[name_of_current_aiBone].boneMatrix = aiMatToGlmMat(bone_mesh->mOffsetMatrix);
 			}
 
-			for (int vIdx = 0; vIdx < tmpVIndices.size(); vIdx++)
+
+			for (int vIdx = 0; vIdx < tmpBoneData.size(); vIdx++)
 			{
-				VertexBoneData& currentBoneData = tmpBoneData[tmpVIndices[vIdx]];
+				VertexBoneData& currentBoneData = tmpBoneData[vIdx];
 				while (currentBoneData.weight.size() < 4) {
 					currentBoneData.weight.push_back(0.0f);
 				}
@@ -455,7 +461,7 @@ public:
 			}
 
 			glBindVertexArray(meshesVAO[i]);
-			glDrawArrays(GL_TRIANGLES, 0, static_cast<GLsizei>(positionMesh[i].size()));
+			glDrawElements(GL_TRIANGLES, static_cast<GLsizei>(vIndicesMesh[i].size()), GL_UNSIGNED_INT, 0);
 
 			glBindVertexArray(0);
 		}
@@ -523,10 +529,14 @@ protected:
 				glBufferData(GL_ARRAY_BUFFER, boneWeightsPerVertex.size() * sizeof(glm::vec4), boneWeightsPerVertex.data(), GL_STATIC_DRAW);
 				glVertexAttribPointer(4, 4, GL_FLOAT,GL_FALSE, sizeof(glm::vec4), reinterpret_cast<void*>(0));
 				glEnableVertexAttribArray(4);
-			}
+
+				}
+			glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, meshesEBO[i]);
+			glBufferData(GL_ELEMENT_ARRAY_BUFFER, vIndicesMesh[i].size() * sizeof(GLuint), vIndicesMesh[i].data(), GL_STATIC_DRAW);
 
 			glBindBuffer(GL_ARRAY_BUFFER, 0);
 			glBindVertexArray(0);
+			glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 		}
 		glBindBuffer(GL_UNIFORM_BUFFER, UboMatrices);
 		glBufferData(GL_UNIFORM_BUFFER, 258 * sizeof(glm::mat4), reinterpret_cast<void*>(0), GL_DYNAMIC_DRAW);

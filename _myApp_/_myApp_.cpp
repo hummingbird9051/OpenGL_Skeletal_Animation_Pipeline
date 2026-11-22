@@ -359,7 +359,7 @@ public:
 
 
 				modelTime = !pause ? modelTime + deltaTime : modelTime;
-				objModel->setCurrentAnimationId(currentState);
+				if(!pause) objModel->setCurrentAnimationId(currentState, modelTime);
 
 				const GLint uniformAddress = glGetUniformLocation(shader_program, "model");
 
@@ -369,7 +369,7 @@ public:
 						glm::rotate(glm::mat4(1.0f), glm::radians(objYangle), glm::vec3(0.0f, 1.0f, 0.0f)) *
 						glm::scale(glm::mat4(1.0f), glm::vec3(0.01f));
 					glUniformMatrix4fv(uniformAddress, 1, GL_FALSE, glm::value_ptr(model));
-					objModel->draw(shader_program, modelTime + (i * 0.01));
+					objModel->draw(shader_program, modelTime);
 				}
 
 
@@ -484,6 +484,7 @@ public:
 				break;
 			case 'R':
 				initValues();
+				glfwSwapInterval(useVsync);
 				break;
 			case 'Z':
 				postConvolNum = 0;
@@ -589,10 +590,16 @@ public:
 		modelTime = 0;
 		previousTime = 0;
 		lineMode = false;
+		modelTime = 0.0;
+		modelAmount = 100;
+		columns = 10;
 
 		mouseDown = false;
 
 		fov = 50.f;
+
+		timeSpeed = 1.0f;
+		useVsync = false;
 
 		postConvolNum = 0;
 

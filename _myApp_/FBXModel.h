@@ -43,7 +43,9 @@ private:
 
 	struct SkeletonBone {
 		string name;
-		glm::mat4 localBindTransform = glm::mat4(1.0f);
+		glm::vec3 translate = glm::vec3(1.0f);
+		glm::quat rotate = glm::mat4(1.0f);
+		glm::vec3 scale = glm::vec3(1.0f);
 		int parent = -1;
 		vector<int> children;
 	};
@@ -71,7 +73,12 @@ private:
 	vector<Animation> animations;
 	unordered_map<string, int> findAnimation;
 
-	int currentAnimationId = 0;
+	int currentAnimationId = 1;
+	int lastAnimationId = 1;
+
+	double currentAnimStartedTime = 0.0;
+	double lastAnimStartedTime = 0.0;
+	double transitionLength = 0.5;
 
 	vector<SkeletonBone> nodes;
 
@@ -412,11 +419,15 @@ public:
 
 		
 		if (animations.size() > currentAnimationId && currentAnimationId >=0) {
-			double tick = fmod(currentTime * animations[currentAnimationId].tickperSec, animations[currentAnimationId].duration);
+			double lastedSinceChange = currentTime - currentAnimStartedTime;
+			double lastAnimTick = fmod((currentTime - lastAnimStartedTime) * animations[lastAnimationId].tickperSec, animations[lastAnimationId].duration);
+			double currentAnimTick = fmod(lastedSinceChange * animations[currentAnimationId].tickperSec, animations[currentAnimationId].duration);
+			double w = lastedSinceChange / transitionLength;
 			{
 				CPUProfiler boneProfile(CPUBoneUpdate);
-				updateAndCalculateMatrix(tick);
+				updateAndCalculateMatrix(lastAnimTick, currentAnimTick, w);
 			}
+
 			
 		}
 		
@@ -445,11 +456,19 @@ public:
 			glBindVertexArray(0);
 		}
 
+
 	}
 
-	void setCurrentAnimationId(string animationName) {
+	void setCurrentAnimationId(string animationName, double currentTime) override{
 		auto it = findAnimation.find(animationName);
-		if (it != findAnimation.end()) currentAnimationId = it->second;
+		if (it != findAnimation.end()) {
+			if (currentAnimationId != it->second) {
+				lastAnimationId = currentAnimationId;
+				currentAnimationId = it->second;
+				lastAnimStartedTime = currentAnimStartedTime;
+				currentAnimStartedTime = currentTime;
+			}
+		}
 	}
 
 protected:
@@ -536,23 +555,57 @@ protected:
 	}
 
 private:
-	void updateAndCalculateMatrix(double tick) {
+	void updateAndCalculateMatrix(double lastAnimTick, double currentAnimTick, double w) {
+		w = clamp(w, 0.0, 1.0);
 		for (int nodeIdx = 0; nodeIdx < nodes.size(); nodeIdx++) {
 			glm::mat4 localNodeTransform;
-			glm::mat4 T;
-			glm::mat4 R;
-			glm::mat4 S;
-
+			glm::vec3 currentT, currentS, lastT,  lastS;
+			glm::quat currentR, lastR;
 			// Channel found: build the local transform from interpolated keys. Otherwise use the bind pose.
-			int id = animations[currentAnimationId].nodeToChannel[nodeIdx];
-			if (id != -1) {
-				const Animation::Channel& channel = animations[currentAnimationId].channels[id];
-				T = glm::translate(glm::mat4(1.0f), pickKey(channel.positionKeys, tick));
-				R = glm::mat4_cast(pickKey(channel.rotationKeys, tick));
-				S = glm::scale(glm::mat4(1.0f), pickKey(channel.scalingKeys, tick));
-				localNodeTransform = T * R * S;
+			
+			int currentId = animations[currentAnimationId].nodeToChannel[nodeIdx];
+			if (currentId != -1) {
+				const Animation::Channel& channel = animations[currentAnimationId].channels[currentId];
+				currentT = pickKey(channel.positionKeys, currentAnimTick);
+				currentR = pickKey(channel.rotationKeys, currentAnimTick);
+				currentS = pickKey(channel.scalingKeys, currentAnimTick);
 			}
-			else localNodeTransform = nodes[nodeIdx].localBindTransform;
+			else {
+				currentT = nodes[nodeIdx].translate;
+				currentR = nodes[nodeIdx].rotate;
+				currentS = nodes[nodeIdx].scale;
+			}
+
+			glm::mat4 mixedTranslation, mixedRotation, mixedScale;
+
+			if(w < 1.0){
+				int lastId = animations[lastAnimationId].nodeToChannel[nodeIdx];
+				if (lastId != -1) {
+					const Animation::Channel& lastCh = animations[lastAnimationId].channels[lastId];
+					lastT = pickKey(lastCh.positionKeys, lastAnimTick);
+					lastR = pickKey(lastCh.rotationKeys, lastAnimTick);
+					lastS = pickKey(lastCh.scalingKeys, lastAnimTick);
+				}
+				else {
+					lastT = nodes[nodeIdx].translate;
+					lastR = nodes[nodeIdx].rotate;
+					lastS = nodes[nodeIdx].scale;
+				}
+
+				mixedTranslation = glm::translate(glm::mat4(1.0f), glm::mix(lastT, currentT, static_cast<float>(w)));
+				mixedRotation = glm::mat4_cast(glm::slerp(lastR, currentR, static_cast<float>(w)));
+				mixedScale = glm::scale(glm::mat4(1.0f), glm::mix(lastS, currentS, static_cast<float>(w)));
+			}
+			else {
+				mixedTranslation = glm::translate(glm::mat4(1.0f), currentT);
+				mixedRotation = glm::mat4_cast(currentR);
+				mixedScale = glm::scale(glm::mat4(1.0f), currentS);
+			}
+			
+			
+
+
+			localNodeTransform = mixedTranslation * mixedRotation * mixedScale;
 			int p = nodes[nodeIdx].parent;
 
 			if (p == -1) nodeGlobalTransforms[nodeIdx] = localNodeTransform;
@@ -568,10 +621,13 @@ private:
 
 	int saveBoneData(const aiNode* cur, int parentInfo) {
 		if (!cur) return -1;
+		glm::mat4 matrix = aiMatToGlmMat(cur->mTransformation);
+		glm::vec3 trash1;
+		glm::vec4 trash2;
 		SkeletonBone temp;
 		temp.name = cur->mName.C_Str();
 		temp.parent = parentInfo;
-		temp.localBindTransform = aiMatToGlmMat(cur->mTransformation);
+		glm::decompose(matrix, temp.scale, temp.rotate, temp.translate, trash1, trash2);
 		nodes.push_back(std::move(temp));
 		int currInfo = static_cast<int>(nodes.size()) - 1;
 		for (unsigned int i = 0; i < cur->mNumChildren; i++) {

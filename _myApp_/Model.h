@@ -10,10 +10,12 @@
 #include <unordered_map>
 #include <algorithm>
 
+#define GLM_ENABLE_EXPERIMENTAL
 #include <glm/glm.hpp>
 #include<glm/gtc/matrix_transform.hpp>
 #include<glm/gtc/type_ptr.hpp>
 #include <glm/gtc/quaternion.hpp>
+#include<glm/gtx/matrix_decompose.hpp>
 
 #include<assimp/Importer.hpp>
 #include<assimp/scene.h>
@@ -196,7 +198,7 @@ public:
 	// interfacing with C-API boundaries like fopen() or Assimp.
 	virtual void loadFBX(std::string objectFileName, std::vector<std::string> animationFileName) {}
 
-	virtual void setCurrentAnimationId(std::string animationName) {}
+	virtual void setCurrentAnimationId(std::string animationName, double currentTime) {}
 
 protected:
 	virtual void prepareBuffers() {

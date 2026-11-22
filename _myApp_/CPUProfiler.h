@@ -9,6 +9,7 @@ public:
 	CPUProfiler(CPULabels label);
 	~CPUProfiler();
 	static void printPeriod(CPULabels label, std::chrono::duration<double, std::milli> dur);
+	static double getAverage(int label);
 
 private:
 	std::chrono::steady_clock::time_point start;

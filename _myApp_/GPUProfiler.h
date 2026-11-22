@@ -14,6 +14,7 @@ public:
 	void endQuery(GPULabels queryId);
 	void printQuery();
 	void nextFrame();
+	double getAverage(int label);
 
 private:
 	GLuint queries[GPULabelCount][GPUqueriesPerLabel];
@@ -21,4 +22,5 @@ private:
 	int framePerTick[GPULabelCount]{ 0 };
 	std::chrono::steady_clock::time_point lastUpdate;
 	int frameCount = 0;
+	double averages[GPULabelCount]{ 0 };
 };

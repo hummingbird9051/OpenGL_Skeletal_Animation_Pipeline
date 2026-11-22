@@ -40,9 +40,15 @@ void GPUProfiler::printQuery() {
 	if (now - lastUpdate < std::chrono::seconds(1)) return;
 	for (int i = 0; i < GPULabelCount; i++) {
 		if (framePerTick[i] == 0) continue;
-		std::cout << names[i] << "'s time average for 1sec is " << querySum[i] / framePerTick[i] << "ms" << std::endl;
+		double average = querySum[i] / framePerTick[i];
+		std::cout << names[i] << "'s time average for 1sec is " << average << "ms" << std::endl;
+		averages[i] = average;
 		querySum[i] = 0.0f;
 		framePerTick[i] = 0;
 	}
 	lastUpdate = now;
+}
+
+double GPUProfiler::getAverage(int label) {
+	return averages[label];
 }

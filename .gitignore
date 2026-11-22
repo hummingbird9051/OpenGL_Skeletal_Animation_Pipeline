@@ -18,3 +18,6 @@ Release/
 *.tlog
 *.idb
 *.exe
+
+# Ignore imgui.ini file(different each computer settings)
+imgui.ini

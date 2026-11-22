@@ -201,10 +201,12 @@ public:
 
 		glEnable(GL_MULTISAMPLE);
 
+
+		//imgui setup
 		ImGui::CreateContext();
 		ImGui_ImplGlfw_InitForOpenGL(window, true);
 		ImGui_ImplOpenGL3_Init("#version 450");
-
+		//imgui setup end
 	}
 
 	// 애플리케이션 끝날 때 호출된다.
@@ -220,9 +222,11 @@ public:
 
 		//Delete GPUProfiler object
 		delete gpuProfiler;
+		//imgui shutdown
 		ImGui_ImplOpenGL3_Shutdown();
 		ImGui_ImplGlfw_Shutdown();
 		ImGui::DestroyContext();
+		//imgui shutdown end
 		glfwDestroyWindow(window);
 	}
 
@@ -399,14 +403,15 @@ public:
 			gpuProfiler->endQuery(GPURendering);
 			
 		}
-
-		ImGui_ImplOpenGL3_NewFrame();
-		ImGui_ImplGlfw_NewFrame();
-		ImGui::NewFrame();
-		ImGui::ShowDemoWindow();
-		ImGui::Render();
-		ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-
+		if (showImGui) {
+			ImGui_ImplOpenGL3_NewFrame();
+			ImGui_ImplGlfw_NewFrame();
+			ImGui::NewFrame();
+			ImGui::ShowDemoWindow();
+			ImGui::Render();
+			ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+		}
+		
 
 		gpuProfiler->printQuery();
 		gpuProfiler->nextFrame();
@@ -463,6 +468,10 @@ public:
 				break;
 			case 'C':
 				postConvolNum = 2;
+				break;
+			case 'I':
+				showImGui = !showImGui;
+				break;
 			};
 
 			if (key == GLFW_KEY_A)
@@ -514,7 +523,7 @@ public:
 
 	static void mousePositionCallback(GLFWwindow* window, double x, double y) {
 		auto* app = static_cast<my_application*>(glfwGetWindowUserPointer(window));
-		app->onMouseMove(static_cast<int>(x), static_cast<int>(y));
+		if(!app->isUsingMouse()) app->onMouseMove(static_cast<int>(x), static_cast<int>(y));
 	}
 	void onMouseMove(int x, int y)
 	{
@@ -531,7 +540,7 @@ public:
 
 	static void mouseWheelCallback(GLFWwindow* window, double xOffset, double yOffset) {
 		auto* app = static_cast<my_application*>(glfwGetWindowUserPointer(window));
-		app->onMouseWheel(yOffset);
+		if(!app->isUsingMouse()) app->onMouseWheel(yOffset);
 	}
 	void onMouseWheel(double ypos)
 	{
@@ -539,6 +548,11 @@ public:
 			fov = glm::min(MAX_FOV, fov + 1.0f);
 		else if(ypos < 0)
 			fov = glm::max(MIN_FOV, fov - 1.0f);
+	}
+
+	bool isUsingMouse() {
+		if (showImGui) return ImGui::GetIO().WantCaptureMouse;
+		else return false;
 	}
 
 	void initValues()
@@ -604,6 +618,9 @@ private:
 	} info;
 
 	GLFWwindow* window = nullptr;
+
+	//bool for imgui
+	bool showImGui = false;
 };
 
 int main() {

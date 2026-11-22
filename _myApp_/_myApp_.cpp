@@ -236,7 +236,7 @@ public:
 		if (!window) return false;
 
 		glfwMakeContextCurrent(window);
-		glfwSwapInterval(0); //Off vs
+		glfwSwapInterval(useVsync); //Off vs
 		info.windowWidth = static_cast<float>(width);
 		info.windowHeight = static_cast<float>(height);
 
@@ -268,6 +268,7 @@ public:
 			glfwGetFramebufferSize(window, &width, &height);
 			glViewport(0, 0, width, height);
 			double deltaTime = currentTime - previousTime;
+			deltaTime *= timeSpeed;
 
 			// calculating camera matrices
 			float distance = 14.f;
@@ -362,8 +363,6 @@ public:
 
 				const GLint uniformAddress = glGetUniformLocation(shader_program, "model");
 
-				int modelAmount = 100;
-				int columns = 10;
 				for (int i = 0; i < modelAmount; i++) {
 					glm::vec3 pos = glm::vec3(static_cast<float>(i % columns * 0.6), 0.0f, static_cast<float>(i / columns * 0.6));
 					glm::mat4 model = glm::translate(glm::mat4(1.0f), pos) * glm::translate(glm::mat4(1.0f), objPosition) *
@@ -403,15 +402,41 @@ public:
 			gpuProfiler->endQuery(GPURendering);
 			
 		}
+		bool lastUseVsync = useVsync;
 		if (showImGui) {
 			ImGui_ImplOpenGL3_NewFrame();
 			ImGui_ImplGlfw_NewFrame();
 			ImGui::NewFrame();
-			ImGui::ShowDemoWindow();
+			ImGui::Begin("Performance");
+			ImGui::Text("CPU Frame:		%.2f ms", CPUProfiler::getAverage(CPUFrame));
+			ImGui::Text("CPU Submit:		%.2f ms", CPUProfiler::getAverage(CPUSubmit));
+			ImGui::Text("Bone/1T:			%.2f ms", CPUProfiler::getAverage(CPUBoneUpdate));
+			ImGui::Text("GPU Rendering:	%.2f ms", gpuProfiler->getAverage(GPURendering));
+			ImGui::End();
+			ImGui::Begin("Key Manipulation");
+			ImGui::Text("W/S : forward, backward"
+				"\nA/D : left, right"
+				"\nMouse Dragging : spin model"
+				"\nMouse Wheel : change FOV"
+				"\nSpace : pause"
+				"\n1/2 : toggle model/light visible/invisible"
+				"\nM : toggle linemode"
+				"\nR : Reset"
+				"\nZ/X/C : postprocessing mode 1, 2, 3"
+				"\nI : UI toggle"
+			);
+			ImGui::End();
+			ImGui::Begin("Manipulate Condition");
+			ImGui::SliderInt("Model Amount", &modelAmount, 1, 100);
+			ImGui::SliderInt("Columns", &columns, 1, 10);
+			ImGui::SliderFloat("Speed", &timeSpeed, 0.1f, 2.0f);
+			ImGui::Checkbox("Toggle vsync", &useVsync);
+			ImGui::End();
 			ImGui::Render();
 			ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 		}
-		
+		//if vsync changed, call swapInterval
+		if (useVsync != lastUseVsync) glfwSwapInterval(useVsync);
 
 		gpuProfiler->printQuery();
 		gpuProfiler->nextFrame();
@@ -583,10 +608,16 @@ private:
 	GLuint shader_light_program = 0;
 	GLuint shader_postprocessing_program = 0;
 
+	float timeSpeed = 1.0f; //Speed for rendering(deltaTime *= timeSpeed)
+	bool useVsync = false;
+
 	PostProcessing* post = nullptr;
 	GLuint postConvolNum = 0;
 
+
 	Model* objModel = nullptr;
+	int modelAmount = 100;
+	int columns = 10;
 	Model* pyramidModel = nullptr;
 	Model* plateModel = nullptr;
 	glm::vec3 objPosition;

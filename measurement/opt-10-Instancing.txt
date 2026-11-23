@@ -1,0 +1,83 @@
+opt-10-Instancing
+
+*This assumes that all characters share the same pose.
+
+#Run 1
+
+CPUBoneUpdate's average period : 0.056039
+CPUFrame's average period : 1.40951
+CPUSubmit's average period : 0.0973749
+GPURendering's time average for 1sec is 1.19219ms
+CPUBoneUpdate's average period : 0.0342173
+CPUFrame's average period : 1.27499
+CPUSubmit's average period : 0.0698788
+GPURendering's time average for 1sec is 1.17096ms
+CPUBoneUpdate's average period : 0.0349557
+CPUFrame's average period : 1.25492
+CPUSubmit's average period : 0.0663344
+GPURendering's time average for 1sec is 1.16444ms
+CPUBoneUpdate's average period : 0.0320348
+CPUFrame's average period : 1.42507
+CPUSubmit's average period : 0.0647271
+GPURendering's time average for 1sec is 1.16234ms
+
+#Run 2
+
+CPUBoneUpdate's average period : 0.053288
+CPUFrame's average period : 1.40172
+CPUSubmit's average period : 0.0918192
+GPURendering's time average for 1sec is 1.16846ms
+CPUBoneUpdate's average period : 0.0314868
+CPUFrame's average period : 1.24786
+CPUSubmit's average period : 0.0633683
+GPURendering's time average for 1sec is 1.15887ms
+CPUBoneUpdate's average period : 0.0352915
+CPUFrame's average period : 1.24688
+CPUSubmit's average period : 0.0678363
+GPURendering's time average for 1sec is 1.16163ms
+CPUBoneUpdate's average period : 0.0305255
+CPUFrame's average period : 1.24417
+CPUSubmit's average period : 0.061521
+GPURendering's time average for 1sec is 1.15635ms
+
+#Run 3
+
+CPUBoneUpdate's average period : 0.0542992
+CPUFrame's average period : 1.44023
+CPUSubmit's average period : 0.0955213
+GPURendering's time average for 1sec is 1.18097ms
+CPUBoneUpdate's average period : 0.0333268
+CPUFrame's average period : 1.25615
+CPUSubmit's average period : 0.0671187
+GPURendering's time average for 1sec is 1.16324ms
+CPUBoneUpdate's average period : 0.0349336
+CPUFrame's average period : 1.24872
+CPUSubmit's average period : 0.0664096
+GPURendering's time average for 1sec is 1.1601ms
+CPUBoneUpdate's average period : 0.0315987
+CPUFrame's average period : 1.25106
+CPUSubmit's average period : 0.0645283
+GPURendering's time average for 1sec is 1.16048ms
+
+Results (100 characters, ms, average of 9 samples: 3 runs x 3 seconds, warmup excluded)
+
+| Step 					| Change 					| Bone 	| Submit| Frame | GPU 	|
+| baseline-v2 				| Naive runtime version 			| 0.040 | 4.38 	| 7.64 	| 7.25 	|
+| opt1-node-name-ref 			| Take node names by reference 			| 0.036 | 3.94 	| 7.38 	| 6.94 	|
+| opt2-cache-uniform-location 		| Cache uniform locations 			| 0.036 | 3.88 	| 7.29 	| 6.96 	|
+| opt-3-cache-string-hashmap 		| Precompute name-to-index lookups 		| 0.023 | 2.59 	| 7.31 	| 6.99 	|
+| opt-4-convert-vmath-to-glm-FBXModel-h | Replace vmath with GLM 			| 0.018 | 2.05 	| 7.32 	| 6.93 	|
+| opt-5-replace-recursive-bone-update 	| Replace recursion with a linear loop 		| 0.018 | 2.05 	| 7.14 	| 6.86 	|
+| opt-6-using-EBO-to-reduce-GPU-time 	| Indexed drawing with EBO 			| 0.017 | 1.97 	| 4.66 	| 4.34 	|
+| refactor-using-mesh-offset 		| Per-mesh skinning (finger fix) 		| 0.020 | 2.37 	| 7.44 	| 7.11 	|
+| opt-7-orphanize-uniform-buffer 	| UBO orphaning 				| 0.020 | 2.48 	| 4.12 	| 3.88 	|
+| feat-add-blending 			| Animation blending 				| 0.020 | 2.57 	| 4.24 	| 3.93 	|
+| opt-8-normal matrix without inverse 	| Drop per-vertex inverse in normal matrix 	| 0.023 | 2.85 	| 3.87 	| 3.63 	|
+| opt-9-front-to-back-draw-order 	| Draw characters front to back 		| 0.019 | 2.36 	| 2.44 	| 1.72 	|
+| opt-10-Instancing 			| One bone update per frame + instanced draw 	| 0.033 | 0.066 | 1.27 	| 1.16 	|
+- From opt-10, Bone is measured once per frame. Before opt-10, it was measured per character and ran 100 times per frame (opt-9: about 0.019 x 100 = 1.9 ms per frame).
+
+
+
+opt-9 -> opt-10: Submit -97%, Frame -48%, GPU -33%
+baseline-v2 -> opt-10: Submit -98.5%, Frame -83%, GPU -84%

@@ -199,7 +199,6 @@ public:
 		// If we make new class, use pointer paramiter in place of vector container to reduce Error. For now, we need to input the size of the primitive pointer, and this is dangerous.
 		plateModel->loadDiffuseMap("wall.jpg");
 
-		glEnable(GL_MULTISAMPLE);
 
 
 		//imgui setup
@@ -670,7 +669,6 @@ int main() {
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 5);
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 	glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GLFW_TRUE);
-	glfwWindowHint(GLFW_SAMPLES, 16);
 	auto app = make_unique<my_application>();
 	if (!app->setupWindow(600, 400, "Skeletal Animation")) {
 		glfwTerminate();

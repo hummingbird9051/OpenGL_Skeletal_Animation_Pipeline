@@ -1,0 +1,550 @@
+11/23 GPU bottle-neck check(100 models standard)
+
+exp0  baseline
+
+#Run 1
+
+CPUBoneUpdate's average period : 0.0315244
+CPUFrame's average period : 4.68774
+CPUSubmit's average period : 3.73069
+GPURendering's time average for 1sec is 3.9837ms
+CPUBoneUpdate's average period : 0.0204233
+CPUFrame's average period : 4.22399
+CPUSubmit's average period : 2.63274
+GPURendering's time average for 1sec is 3.96557ms
+CPUBoneUpdate's average period : 0.0214904
+CPUFrame's average period : 4.10417
+CPUSubmit's average period : 2.70878
+GPURendering's time average for 1sec is 3.8679ms
+CPUBoneUpdate's average period : 0.0195952
+CPUFrame's average period : 4.07698
+CPUSubmit's average period : 2.50282
+GPURendering's time average for 1sec is 3.82461ms
+
+#Run 2
+
+CPUBoneUpdate's average period : 0.0359332
+CPUFrame's average period : 4.86853
+CPUSubmit's average period : 4.19959
+GPURendering's time average for 1sec is 4.04846ms
+CPUBoneUpdate's average period : 0.0226771
+CPUFrame's average period : 4.15574
+CPUSubmit's average period : 2.82305
+GPURendering's time average for 1sec is 3.90116ms
+CPUBoneUpdate's average period : 0.0241383
+CPUFrame's average period : 4.11468
+CPUSubmit's average period : 2.94649
+GPURendering's time average for 1sec is 3.86183ms
+CPUBoneUpdate's average period : 0.0223235
+CPUFrame's average period : 4.73507
+CPUSubmit's average period : 2.77771
+GPURendering's time average for 1sec is 3.88671ms
+
+#Run 3
+
+CPUBoneUpdate's average period : 0.0356591
+CPUFrame's average period : 5.00988
+CPUSubmit's average period : 4.16995
+GPURendering's time average for 1sec is 4.00698ms
+CPUBoneUpdate's average period : 0.023167
+CPUFrame's average period : 4.06042
+CPUSubmit's average period : 2.85985
+GPURendering's time average for 1sec is 3.82866ms
+CPUBoneUpdate's average period : 0.0249178
+CPUFrame's average period : 4.06212
+CPUSubmit's average period : 3.03484
+GPURendering's time average for 1sec is 3.82281ms
+CPUBoneUpdate's average period : 0.0227132
+CPUFrame's average period : 4.03866
+CPUSubmit's average period : 2.80894
+GPURendering's time average for 1sec is 3.79544ms
+
+exp1  resolution x4 (1200x800)
+
+#Run 1
+
+CPUBoneUpdate's average period : 0.0315559
+CPUFrame's average period : 7.6125
+CPUSubmit's average period : 3.75004
+GPURendering's time average for 1sec is 6.4583ms
+CPUBoneUpdate's average period : 0.02374
+CPUFrame's average period : 7.44133
+CPUSubmit's average period : 3.03663
+GPURendering's time average for 1sec is 6.72637ms
+CPUBoneUpdate's average period : 0.0224354
+CPUFrame's average period : 7.10215
+CPUSubmit's average period : 2.80503
+GPURendering's time average for 1sec is 6.44101ms
+CPUBoneUpdate's average period : 0.0201817
+CPUFrame's average period : 7.97104
+CPUSubmit's average period : 2.52419
+GPURendering's time average for 1sec is 6.38113ms
+
+#Run 2
+
+CPUBoneUpdate's average period : 0.0393805
+CPUFrame's average period : 7.8667
+CPUSubmit's average period : 4.60619
+GPURendering's time average for 1sec is 6.63586ms
+CPUBoneUpdate's average period : 0.0225656
+CPUFrame's average period : 7.26763
+CPUSubmit's average period : 2.883
+GPURendering's time average for 1sec is 6.52375ms
+CPUBoneUpdate's average period : 0.0224118
+CPUFrame's average period : 7.0625
+CPUSubmit's average period : 2.79845
+GPURendering's time average for 1sec is 6.45044ms
+CPUBoneUpdate's average period : 0.0202945
+CPUFrame's average period : 7.10929
+CPUSubmit's average period : 2.58107
+GPURendering's time average for 1sec is 6.41272ms
+
+#Run 3
+
+CPUBoneUpdate's average period : 0.0353177
+CPUFrame's average period : 8.16326
+CPUSubmit's average period : 4.17996
+GPURendering's time average for 1sec is 6.74261ms
+CPUBoneUpdate's average period : 0.0218138
+CPUFrame's average period : 7.16085
+CPUSubmit's average period : 2.74111
+GPURendering's time average for 1sec is 6.43246ms
+CPUBoneUpdate's average period : 0.0224656
+CPUFrame's average period : 7.10685
+CPUSubmit's average period : 2.80824
+GPURendering's time average for 1sec is 6.47214ms
+CPUBoneUpdate's average period : 0.0205158
+CPUFrame's average period : 7.0543
+CPUSubmit's average period : 2.5904
+GPURendering's time average for 1sec is 6.39325ms
+
+exp2  MSAA off (GLFW_SAMPLES 0) - no change, FBO is not multisampled
+
+#Run 1
+
+CPUBoneUpdate's average period : 0.0354907
+CPUFrame's average period : 4.59404
+CPUSubmit's average period : 4.09701
+GPURendering's time average for 1sec is 3.8672ms
+CPUBoneUpdate's average period : 0.0241603
+CPUFrame's average period : 4.0273
+CPUSubmit's average period : 2.98212
+GPURendering's time average for 1sec is 3.86251ms
+CPUBoneUpdate's average period : 0.025522
+CPUFrame's average period : 4.03988
+CPUSubmit's average period : 3.1122
+GPURendering's time average for 1sec is 3.86277ms
+CPUBoneUpdate's average period : 0.0241788
+CPUFrame's average period : 4.01432
+CPUSubmit's average period : 2.99766
+GPURendering's time average for 1sec is 3.8513ms
+
+#Run 2
+
+CPUBoneUpdate's average period : 0.03066
+CPUFrame's average period : 4.55726
+CPUSubmit's average period : 3.6252
+GPURendering's time average for 1sec is 3.93575ms
+CPUBoneUpdate's average period : 0.0198174
+CPUFrame's average period : 4.09383
+CPUSubmit's average period : 2.53593
+GPURendering's time average for 1sec is 3.90037ms
+CPUBoneUpdate's average period : 0.0212879
+CPUFrame's average period : 4.07956
+CPUSubmit's average period : 2.68525
+GPURendering's time average for 1sec is 3.87901ms
+CPUBoneUpdate's average period : 0.0193918
+CPUFrame's average period : 4.00006
+CPUSubmit's average period : 2.48256
+GPURendering's time average for 1sec is 3.82088ms
+
+#Run 3
+
+CPUBoneUpdate's average period : 0.0307874
+CPUFrame's average period : 4.54107
+CPUSubmit's average period : 3.6321
+GPURendering's time average for 1sec is 4.00332ms
+CPUBoneUpdate's average period : 0.0196656
+CPUFrame's average period : 4.16049
+CPUSubmit's average period : 2.50259
+GPURendering's time average for 1sec is 3.93986ms
+CPUBoneUpdate's average period : 0.0212555
+CPUFrame's average period : 4.15525
+CPUSubmit's average period : 2.66666
+GPURendering's time average for 1sec is 3.99102ms
+CPUBoneUpdate's average period : 0.0193907
+CPUFrame's average period : 4.15649
+CPUSubmit's average period : 2.49134
+GPURendering's time average for 1sec is 3.9891ms
+
+exp3  flat fragment color
+
+#Run 1
+
+CPUBoneUpdate's average period : 0.0297027
+CPUFrame's average period : 3.84132
+CPUSubmit's average period : 3.36749
+GPURendering's time average for 1sec is 1.28648ms
+CPUBoneUpdate's average period : 0.0184966
+CPUFrame's average period : 2.29544
+CPUSubmit's average period : 2.22043
+GPURendering's time average for 1sec is 1.05404ms
+CPUBoneUpdate's average period : 0.0200663
+CPUFrame's average period : 2.41179
+CPUSubmit's average period : 2.38014
+GPURendering's time average for 1sec is 1.07503ms
+CPUBoneUpdate's average period : 0.0186787
+CPUFrame's average period : 2.30424
+CPUSubmit's average period : 2.25014
+GPURendering's time average for 1sec is 1.04222ms
+
+#Run 2
+
+CPUBoneUpdate's average period : 0.0328905
+CPUFrame's average period : 4.20166
+CPUSubmit's average period : 3.71434
+GPURendering's time average for 1sec is 1.36276ms
+CPUBoneUpdate's average period : 0.0190727
+CPUFrame's average period : 2.31605
+CPUSubmit's average period : 2.28797
+GPURendering's time average for 1sec is 1.03554ms
+CPUBoneUpdate's average period : 0.0208363
+CPUFrame's average period : 2.50751
+CPUSubmit's average period : 2.46549
+GPURendering's time average for 1sec is 1.12314ms
+CPUBoneUpdate's average period : 0.0187954
+CPUFrame's average period : 2.32234
+CPUSubmit's average period : 2.25963
+GPURendering's time average for 1sec is 1.06277ms
+
+#Run 3
+
+CPUBoneUpdate's average period : 0.0301449
+CPUFrame's average period : 3.66542
+CPUSubmit's average period : 3.40047
+GPURendering's time average for 1sec is 1.26805ms
+CPUBoneUpdate's average period : 0.0180113
+CPUFrame's average period : 2.18162
+CPUSubmit's average period : 2.15704
+GPURendering's time average for 1sec is 1.01266ms
+CPUBoneUpdate's average period : 0.0197165
+CPUFrame's average period : 2.36103
+CPUSubmit's average period : 2.3338
+GPURendering's time average for 1sec is 1.05108ms
+CPUBoneUpdate's average period : 0.0180846
+CPUFrame's average period : 2.26488
+CPUSubmit's average period : 2.18147
+GPURendering's time average for 1sec is 1.05574ms
+
+exp4  no skinning in vertex shader
+
+#Run 1
+
+CPUBoneUpdate's average period : 0.0304289
+CPUFrame's average period : 3.86811
+CPUSubmit's average period : 3.49902
+GPURendering's time average for 1sec is 2.06014ms
+CPUBoneUpdate's average period : 0.0184042
+CPUFrame's average period : 2.34987
+CPUSubmit's average period : 2.3136
+GPURendering's time average for 1sec is 1.98502ms
+CPUBoneUpdate's average period : 0.0197467
+CPUFrame's average period : 2.4271
+CPUSubmit's average period : 2.39997
+GPURendering's time average for 1sec is 1.95826ms
+CPUBoneUpdate's average period : 0.0185843
+CPUFrame's average period : 2.38555
+CPUSubmit's average period : 2.32104
+GPURendering's time average for 1sec is 1.97447ms
+
+#Run 2
+
+CPUBoneUpdate's average period : 0.0323223
+CPUFrame's average period : 4.04433
+CPUSubmit's average period : 3.67229
+GPURendering's time average for 1sec is 2.15934ms
+CPUBoneUpdate's average period : 0.021535
+CPUFrame's average period : 2.65436
+CPUSubmit's average period : 2.62224
+GPURendering's time average for 1sec is 1.98163ms
+CPUBoneUpdate's average period : 0.0228475
+CPUFrame's average period : 2.74205
+CPUSubmit's average period : 2.71605
+GPURendering's time average for 1sec is 1.95464ms
+CPUBoneUpdate's average period : 0.0216819
+CPUFrame's average period : 2.74514
+CPUSubmit's average period : 2.65693
+GPURendering's time average for 1sec is 2.01473ms
+
+#Run 3
+
+CPUBoneUpdate's average period : 0.0320893
+CPUFrame's average period : 4.17103
+CPUSubmit's average period : 3.73038
+GPURendering's time average for 1sec is 2.16016ms
+CPUBoneUpdate's average period : 0.0184029
+CPUFrame's average period : 2.34323
+CPUSubmit's average period : 2.30766
+GPURendering's time average for 1sec is 1.96265ms
+CPUBoneUpdate's average period : 0.0199378
+CPUFrame's average period : 2.47627
+CPUSubmit's average period : 2.44506
+GPURendering's time average for 1sec is 1.9799ms
+CPUBoneUpdate's average period : 0.0182307
+CPUFrame's average period : 2.38533
+CPUSubmit's average period : 2.31349
+GPURendering's time average for 1sec is 1.97995ms
+
+exp5  normal matrix without inverse (kept)
+
+#Run 1
+
+CPUBoneUpdate's average period : 0.0365441
+CPUFrame's average period : 4.80535
+CPUSubmit's average period : 4.24532
+GPURendering's time average for 1sec is 3.74227ms
+CPUBoneUpdate's average period : 0.0245906
+CPUFrame's average period : 3.84973
+CPUSubmit's average period : 3.03047
+GPURendering's time average for 1sec is 3.59213ms
+CPUBoneUpdate's average period : 0.0258953
+CPUFrame's average period : 3.86126
+CPUSubmit's average period : 3.15173
+GPURendering's time average for 1sec is 3.62708ms
+CPUBoneUpdate's average period : 0.0238453
+CPUFrame's average period : 3.82978
+CPUSubmit's average period : 2.95764
+GPURendering's time average for 1sec is 3.60849ms
+
+#Run 2
+
+CPUBoneUpdate's average period : 0.0331418
+CPUFrame's average period : 4.57117
+CPUSubmit's average period : 3.89401
+GPURendering's time average for 1sec is 3.72119ms
+CPUBoneUpdate's average period : 0.0217261
+CPUFrame's average period : 3.91177
+CPUSubmit's average period : 2.77946
+GPURendering's time average for 1sec is 3.66737ms
+CPUBoneUpdate's average period : 0.0226196
+CPUFrame's average period : 3.8863
+CPUSubmit's average period : 2.84997
+GPURendering's time average for 1sec is 3.68651ms
+CPUBoneUpdate's average period : 0.0211388
+CPUFrame's average period : 3.8359
+CPUSubmit's average period : 2.69918
+GPURendering's time average for 1sec is 3.57611ms
+
+#Run 3
+
+CPUBoneUpdate's average period : 0.0339721
+CPUFrame's average period : 4.55853
+CPUSubmit's average period : 4.01248
+GPURendering's time average for 1sec is 3.7946ms
+CPUBoneUpdate's average period : 0.0211655
+CPUFrame's average period : 3.89055
+CPUSubmit's average period : 2.70254
+GPURendering's time average for 1sec is 3.65086ms
+CPUBoneUpdate's average period : 0.0223204
+CPUFrame's average period : 3.89006
+CPUSubmit's average period : 2.81183
+GPURendering's time average for 1sec is 3.64679ms
+CPUBoneUpdate's average period : 0.0205494
+CPUFrame's average period : 3.85377
+CPUSubmit's average period : 2.64042
+GPURendering's time average for 1sec is 3.61768ms
+
+exp6  exp5 + no texture sampling
+
+#Run 1
+
+CPUBoneUpdate's average period : 0.0311425
+CPUFrame's average period : 4.25024
+CPUSubmit's average period : 3.5155
+GPURendering's time average for 1sec is 3.2542ms
+CPUBoneUpdate's average period : 0.0209788
+CPUFrame's average period : 3.49971
+CPUSubmit's average period : 2.48095
+GPURendering's time average for 1sec is 3.27186ms
+CPUBoneUpdate's average period : 0.0208607
+CPUFrame's average period : 3.47118
+CPUSubmit's average period : 2.46042
+GPURendering's time average for 1sec is 3.261ms
+CPUBoneUpdate's average period : 0.0192861
+CPUFrame's average period : 3.47299
+CPUSubmit's average period : 2.30642
+GPURendering's time average for 1sec is 3.25156ms
+
+#Run 2
+
+CPUBoneUpdate's average period : 0.0354192
+CPUFrame's average period : 4.6581
+CPUSubmit's average period : 3.98686
+GPURendering's time average for 1sec is 3.38691ms
+CPUBoneUpdate's average period : 0.0208151
+CPUFrame's average period : 3.53932
+CPUSubmit's average period : 2.48514
+GPURendering's time average for 1sec is 3.27941ms
+CPUBoneUpdate's average period : 0.0216903
+CPUFrame's average period : 3.47875
+CPUSubmit's average period : 2.56645
+GPURendering's time average for 1sec is 3.26409ms
+CPUBoneUpdate's average period : 0.0201387
+CPUFrame's average period : 3.98912
+CPUSubmit's average period : 2.42403
+GPURendering's time average for 1sec is 3.2663ms
+
+#Run 3
+
+CPUBoneUpdate's average period : 0.0370951
+CPUFrame's average period : 4.97474
+CPUSubmit's average period : 4.17168
+GPURendering's time average for 1sec is 3.36176ms
+CPUBoneUpdate's average period : 0.0208591
+CPUFrame's average period : 3.51951
+CPUSubmit's average period : 2.4846
+GPURendering's time average for 1sec is 3.25286ms
+CPUBoneUpdate's average period : 0.0218054
+CPUFrame's average period : 3.90226
+CPUSubmit's average period : 2.56606
+GPURendering's time average for 1sec is 3.25152ms
+CPUBoneUpdate's average period : 0.0197718
+CPUFrame's average period : 3.45243
+CPUSubmit's average period : 2.36173
+GPURendering's time average for 1sec is 3.24857ms
+
+exp7  exp5 + no lighting, varyings still used
+
+#Run 1
+
+CPUBoneUpdate's average period : 0.0303873
+CPUFrame's average period : 4.10709
+CPUSubmit's average period : 3.40056
+GPURendering's time average for 1sec is 1.44883ms
+CPUBoneUpdate's average period : 0.0195206
+CPUFrame's average period : 2.50347
+CPUSubmit's average period : 2.33973
+GPURendering's time average for 1sec is 1.19955ms
+CPUBoneUpdate's average period : 0.0199941
+CPUFrame's average period : 2.39896
+CPUSubmit's average period : 2.35359
+GPURendering's time average for 1sec is 1.11302ms
+CPUBoneUpdate's average period : 0.0182558
+CPUFrame's average period : 2.52024
+CPUSubmit's average period : 2.17908
+GPURendering's time average for 1sec is 1.11327ms
+
+#Run 2
+
+CPUBoneUpdate's average period : 0.0321564
+CPUFrame's average period : 4.16341
+CPUSubmit's average period : 3.63068
+GPURendering's time average for 1sec is 1.44836ms
+CPUBoneUpdate's average period : 0.0187437
+CPUFrame's average period : 2.27616
+CPUSubmit's average period : 2.24648
+GPURendering's time average for 1sec is 1.15877ms
+CPUBoneUpdate's average period : 0.0210849
+CPUFrame's average period : 2.5589
+CPUSubmit's average period : 2.48827
+GPURendering's time average for 1sec is 1.21122ms
+CPUBoneUpdate's average period : 0.01851
+CPUFrame's average period : 2.57891
+CPUSubmit's average period : 2.22412
+GPURendering's time average for 1sec is 1.15003ms
+
+#Run 3
+
+CPUBoneUpdate's average period : 0.0306366
+CPUFrame's average period : 3.8822
+CPUSubmit's average period : 3.44891
+GPURendering's time average for 1sec is 1.41043ms
+CPUBoneUpdate's average period : 0.0186267
+CPUFrame's average period : 2.28968
+CPUSubmit's average period : 2.23243
+GPURendering's time average for 1sec is 1.16489ms
+CPUBoneUpdate's average period : 0.0208927
+CPUFrame's average period : 2.52344
+CPUSubmit's average period : 2.46308
+GPURendering's time average for 1sec is 1.19671ms
+CPUBoneUpdate's average period : 0.0181722
+CPUFrame's average period : 2.21506
+CPUSubmit's average period : 2.18534
+GPURendering's time average for 1sec is 1.13535ms
+
+exp8  exp5 + front-to-back draw order
+
+#Run 1
+
+CPUBoneUpdate's average period : 0.0302229
+CPUFrame's average period : 3.74559
+CPUSubmit's average period : 3.43258
+GPURendering's time average for 1sec is 1.85458ms
+CPUBoneUpdate's average period : 0.0185928
+CPUFrame's average period : 2.30419
+CPUSubmit's average period : 2.27342
+GPURendering's time average for 1sec is 1.73262ms
+CPUBoneUpdate's average period : 0.0206365
+CPUFrame's average period : 2.54308
+CPUSubmit's average period : 2.49995
+GPURendering's time average for 1sec is 1.73932ms
+CPUBoneUpdate's average period : 0.018543
+CPUFrame's average period : 2.3516
+CPUSubmit's average period : 2.28379
+GPURendering's time average for 1sec is 1.73338ms
+
+#Run 2
+
+CPUBoneUpdate's average period : 0.0304781
+CPUFrame's average period : 3.85444
+CPUSubmit's average period : 3.48849
+GPURendering's time average for 1sec is 1.82375ms
+CPUBoneUpdate's average period : 0.0187978
+CPUFrame's average period : 2.35991
+CPUSubmit's average period : 2.32392
+GPURendering's time average for 1sec is 1.72078ms
+CPUBoneUpdate's average period : 0.0207361
+CPUFrame's average period : 2.58647
+CPUSubmit's average period : 2.51439
+GPURendering's time average for 1sec is 1.72324ms
+CPUBoneUpdate's average period : 0.01844
+CPUFrame's average period : 2.65449
+CPUSubmit's average period : 2.28036
+GPURendering's time average for 1sec is 1.7044ms
+
+#Run 3
+
+CPUBoneUpdate's average period : 0.0304858
+CPUFrame's average period : 3.8076
+CPUSubmit's average period : 3.47249
+GPURendering's time average for 1sec is 1.82248ms
+CPUBoneUpdate's average period : 0.0190175
+CPUFrame's average period : 2.33601
+CPUSubmit's average period : 2.30838
+GPURendering's time average for 1sec is 1.69175ms
+CPUBoneUpdate's average period : 0.0204721
+CPUFrame's average period : 2.50367
+CPUSubmit's average period : 2.46142
+GPURendering's time average for 1sec is 1.70557ms
+CPUBoneUpdate's average period : 0.018756
+CPUFrame's average period : 2.36249
+CPUSubmit's average period : 2.29413
+GPURendering's time average for 1sec is 1.69896ms
+
+
+Summary (ms, average of 9 samples: 3 runs x 3 seconds, warmup excluded)
+exp1-4 are compared with exp0. exp5 is compared with exp0. exp6-8 are compared with exp5.
+
+        Bone    Submit  Frame   GPU     Frame diff         GPU diff
+exp0    0.022   2.79    4.17    3.86    -                  -
+exp1    0.022   2.75    7.25    6.47    +3.08 (+73.7%)     +2.61 (+67.6%)
+exp2    0.022   2.72    4.08    3.90    -0.09 (-2.2%)      +0.04 (+1.0%)
+exp3    0.019   2.28    2.33    1.06    -1.85 (-44.2%)     -2.80 (-72.6%)
+exp4    0.020   2.46    2.50    1.98    -1.67 (-40.1%)     -1.88 (-48.8%)
+exp5    0.023   2.85    3.87    3.63    -0.31 (-7.4%)      -0.23 (-6.0%)
+exp6    0.021   2.46    3.59    3.26    -0.28 (-7.1%)      -0.37 (-10.2%)
+exp7    0.019   2.30    2.43    1.16    -1.44 (-37.2%)     -2.47 (-68.0%)
+exp8    0.019   2.36    2.44    1.72    -1.42 (-36.8%)     -1.91 (-52.7%)
+
+I kept exp5 and exp8 because they reduce GPU time without changing the output, and each needed only a small code change. 
+The other experiments remove features, so I used them only to find the bottleneck.

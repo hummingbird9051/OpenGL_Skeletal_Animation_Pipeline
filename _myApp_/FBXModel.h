@@ -92,6 +92,7 @@ private:
 	vector<GLuint> meshesVBOWeights;
 	vector<GLuint> meshesEBO;
 	GLuint UboMatrices = 0;
+	GLuint SSBOId = 0;
 
 	vector<GLuint> meshesTexture;
 
@@ -106,6 +107,7 @@ private:
 
 	vector<glm::mat4> nodeGlobalTransforms; //global transform per node (indexed by node), used by UpdateAndCalculateMatrix()
 
+	int modelAmount = 0;
 
 	int loadAnimation(const aiScene* scene, string originalFileName) {
 		if (scene->mNumAnimations == 0) {
@@ -183,6 +185,7 @@ public:
 			glDeleteBuffers(1, &meshesEBO[i]);
 		}
 		glDeleteBuffers(1, &UboMatrices);
+		glDeleteBuffers(1, &SSBOId);
 	}
 
 	void init() override {
@@ -198,6 +201,7 @@ public:
 			glGenBuffers(1, &meshesEBO[i]);
 		}
 		glGenBuffers(1, &UboMatrices);
+		glGenBuffers(1, &SSBOId);
 	}
 
 	// TODO: change into Universal code.
@@ -409,16 +413,14 @@ public:
 		loadDiffuseMap("");
 	}
 
-	void draw(GLuint _shaderID, double currentTime) override {
+	void calculateTick(GLuint _shaderID, double currentTime) {
 		if (_shaderID != shaderInfo.shaderId) setShaderInfo(_shaderID);
 		glUniform3fv(shaderInfo.ulDefaultAmbient, 1, glm::value_ptr(defaultAmbient));
 		glUniform3fv(shaderInfo.ulDefaultDiffuse, 1, glm::value_ptr(defaultDiffuse));
 		glUniform3fv(shaderInfo.ulDefaultSpecular, 1, glm::value_ptr(defaultSpecular));
 		glUniform1i(shaderInfo.ulUseDiffuseMap, (int)useDiffuseMap);
 		glUniform1i(shaderInfo.ulUseSpecularMap, (int)useSpecularMap);
-
-		
-		if (animations.size() > currentAnimationId && currentAnimationId >=0) {
+		if (animations.size() > currentAnimationId && currentAnimationId >= 0) {
 			double lastedSinceChange = currentTime - currentAnimStartedTime;
 			double lastAnimTick = fmod((currentTime - lastAnimStartedTime) * animations[lastAnimationId].tickperSec, animations[lastAnimationId].duration);
 			double currentAnimTick = fmod(lastedSinceChange * animations[currentAnimationId].tickperSec, animations[currentAnimationId].duration);
@@ -427,11 +429,18 @@ public:
 				CPUProfiler boneProfile(CPUBoneUpdate);
 				updateAndCalculateMatrix(lastAnimTick, currentAnimTick, w);
 			}
-
-			
 		}
-		
+	}
 
+	void setModelMatrices(const vector<glm::mat4>& matrices) {
+		glBindBuffer(GL_SHADER_STORAGE_BUFFER, SSBOId);
+		modelAmount = matrices.size();
+		glBufferData(GL_SHADER_STORAGE_BUFFER, modelAmount * sizeof(glm::mat4), nullptr, GL_DYNAMIC_DRAW);
+		glBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, modelAmount *sizeof(glm::mat4), matrices.data());
+		glBindBuffer(GL_SHADER_STORAGE_BUFFER, SSBOId);
+	}
+
+	void draw(GLuint _shaderID, double currentTime) override {
 		for (int i = 0; i < meshesVAO.size(); i++)
 		{
 			//Setting UBO offset
@@ -451,7 +460,8 @@ public:
 			}
 
 			glBindVertexArray(meshesVAO[i]);
-			glDrawElements(GL_TRIANGLES, static_cast<GLsizei>(vIndicesMesh[i].size()), GL_UNSIGNED_INT, 0);
+			glDrawElementsInstanced(GL_TRIANGLES, static_cast<GLsizei>(vIndicesMesh[i].size()), GL_UNSIGNED_INT, 0, modelAmount);
+			//glDrawElements(GL_TRIANGLES, static_cast<GLsizei>(vIndicesMesh[i].size()), GL_UNSIGNED_INT, 0);
 
 			glBindVertexArray(0);
 		}
@@ -537,9 +547,14 @@ protected:
 			glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 		}
 		glBindBuffer(GL_UNIFORM_BUFFER, UboMatrices);
-		glBufferData(GL_UNIFORM_BUFFER, 258 * sizeof(glm::mat4), reinterpret_cast<void*>(0), GL_DYNAMIC_DRAW);
+		glBufferData(GL_UNIFORM_BUFFER, 258 * sizeof(glm::mat4), nullptr, GL_DYNAMIC_DRAW);
 		glBindBufferBase(GL_UNIFORM_BUFFER, 0, UboMatrices);
 		glBindBuffer(GL_UNIFORM_BUFFER, 0);
+
+		glBindBuffer(GL_SHADER_STORAGE_BUFFER, SSBOId);
+		glBufferData(GL_SHADER_STORAGE_BUFFER, 100 * sizeof(glm::mat4), nullptr, GL_DYNAMIC_DRAW);
+		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, SSBOId);
+		glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
 	}	
 
 	void setShaderInfo(GLuint _shaderId) {

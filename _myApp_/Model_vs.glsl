@@ -10,7 +10,6 @@ out vec3 vsPos;
 out vec3 vsNormal;
 out vec2 vsTexCoord;
 
-uniform mat4 model;
 uniform mat4 view;
 uniform mat4 projection;
 
@@ -19,9 +18,15 @@ layout (std140, binding = 0) uniform BoneMatricesBlock {
     mat4 finalBoneMatrices[MAX_BONES];
 } boneData;
 
+layout (std430, binding = 1) buffer InstancedBlock {
+    mat4 models[];
+};
+
 void main()
 {
-    mat4 totalBoneTransform = mat4(vec4(1.0, 0.0, 0.0, 0.0), vec4(0.0, 1.0, 0.0, 0.0), vec4(0.0, 0.0, 1.0, 0.0), vec4(0.0, 0.0, 0.0, 1.0));
+    mat4 totalBoneTransform;
+    
+    mat4 model = models[gl_InstanceID];
 
     totalBoneTransform = boneWeight[0] * boneData.finalBoneMatrices[boneId[0]];
     for(int i = 1; i < 4; i++) {
@@ -32,8 +37,8 @@ void main()
 
     vsPos = vec3(worldPos);
 
-    mat3 normalMatrix = mat3(transpose(inverse(model)) * totalBoneTransform);
-    normalMatrix = mat3(model * totalBoneTransform);
+    
+   mat3 normalMatrix = mat3(model * totalBoneTransform);
     vsNormal = normalize(normalMatrix * normal);
 	vsTexCoord = texCoord;
     

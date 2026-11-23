@@ -363,7 +363,7 @@ public:
 
 				const GLint uniformAddress = glGetUniformLocation(shader_program, "model");
 
-				for (int i = 0; i < modelAmount; i++) {
+				for (int i = modelAmount - 1; i >= 0 ; i--) {
 					glm::vec3 pos = glm::vec3(static_cast<float>(i % columns * 0.6), 0.0f, static_cast<float>(i / columns * 0.6));
 					glm::mat4 model = glm::translate(glm::mat4(1.0f), pos) * glm::translate(glm::mat4(1.0f), objPosition) *
 						glm::rotate(glm::mat4(1.0f), glm::radians(objYangle), glm::vec3(0.0f, 1.0f, 0.0f)) *

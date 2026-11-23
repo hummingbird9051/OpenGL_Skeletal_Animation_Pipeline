@@ -33,6 +33,7 @@ void main()
     vsPos = vec3(worldPos);
 
     mat3 normalMatrix = mat3(transpose(inverse(model)) * totalBoneTransform);
+    normalMatrix = mat3(model * totalBoneTransform);
     vsNormal = normalize(normalMatrix * normal);
 	vsTexCoord = texCoord;
     

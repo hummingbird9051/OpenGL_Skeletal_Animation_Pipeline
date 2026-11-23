@@ -1,0 +1,58 @@
+opt-9-front-to-back-draw-order
+
+#Run 1
+
+CPUBoneUpdate's average period : 0.0302229
+CPUFrame's average period : 3.74559
+CPUSubmit's average period : 3.43258
+GPURendering's time average for 1sec is 1.85458ms
+CPUBoneUpdate's average period : 0.0185928
+CPUFrame's average period : 2.30419
+CPUSubmit's average period : 2.27342
+GPURendering's time average for 1sec is 1.73262ms
+CPUBoneUpdate's average period : 0.0206365
+CPUFrame's average period : 2.54308
+CPUSubmit's average period : 2.49995
+GPURendering's time average for 1sec is 1.73932ms
+CPUBoneUpdate's average period : 0.018543
+CPUFrame's average period : 2.3516
+CPUSubmit's average period : 2.28379
+GPURendering's time average for 1sec is 1.73338ms
+
+#Run 2
+
+CPUBoneUpdate's average period : 0.0304781
+CPUFrame's average period : 3.85444
+CPUSubmit's average period : 3.48849
+GPURendering's time average for 1sec is 1.82375ms
+CPUBoneUpdate's average period : 0.0187978
+CPUFrame's average period : 2.35991
+CPUSubmit's average period : 2.32392
+GPURendering's time average for 1sec is 1.72078ms
+CPUBoneUpdate's average period : 0.0207361
+CPUFrame's average period : 2.58647
+CPUSubmit's average period : 2.51439
+GPURendering's time average for 1sec is 1.72324ms
+CPUBoneUpdate's average period : 0.01844
+CPUFrame's average period : 2.65449
+CPUSubmit's average period : 2.28036
+GPURendering's time average for 1sec is 1.7044ms
+
+#Run 3
+
+CPUBoneUpdate's average period : 0.0304858
+CPUFrame's average period : 3.8076
+CPUSubmit's average period : 3.47249
+GPURendering's time average for 1sec is 1.82248ms
+CPUBoneUpdate's average period : 0.0190175
+CPUFrame's average period : 2.33601
+CPUSubmit's average period : 2.30838
+GPURendering's time average for 1sec is 1.69175ms
+CPUBoneUpdate's average period : 0.0204721
+CPUFrame's average period : 2.50367
+CPUSubmit's average period : 2.46142
+GPURendering's time average for 1sec is 1.70557ms
+CPUBoneUpdate's average period : 0.018756
+CPUFrame's average period : 2.36249
+CPUSubmit's average period : 2.29413
+GPURendering's time average for 1sec is 1.69896ms

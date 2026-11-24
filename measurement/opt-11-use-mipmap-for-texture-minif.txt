@@ -1,0 +1,64 @@
+opt-11-use-mipmap-for-texture-minification
+
+#Run 1
+
+CPUBoneUpdate's average period : 0.0526374
+CPUFrame's average period : 1.18836
+CPUSubmit's average period : 0.0867458
+GPURendering's time average for 1sec is 0.974407ms
+CPUBoneUpdate's average period : 0.0300142
+CPUFrame's average period : 1.05845
+CPUSubmit's average period : 0.0581473
+GPURendering's time average for 1sec is 0.968124ms
+CPUBoneUpdate's average period : 0.0331282
+CPUFrame's average period : 1.0546
+CPUSubmit's average period : 0.0609407
+GPURendering's time average for 1sec is 0.96818ms
+CPUBoneUpdate's average period : 0.0297368
+CPUFrame's average period : 1.05846
+CPUSubmit's average period : 0.0587938
+GPURendering's time average for 1sec is 0.969825ms
+
+#Run 2
+
+CPUBoneUpdate's average period : 0.0549368
+CPUFrame's average period : 1.19718
+CPUSubmit's average period : 0.0905141
+GPURendering's time average for 1sec is 0.970892ms
+CPUBoneUpdate's average period : 0.0324166
+CPUFrame's average period : 1.06034
+CPUSubmit's average period : 0.0630742
+GPURendering's time average for 1sec is 0.969351ms
+CPUBoneUpdate's average period : 0.0346328
+CPUFrame's average period : 1.05946
+CPUSubmit's average period : 0.0645152
+GPURendering's time average for 1sec is 0.972206ms
+CPUBoneUpdate's average period : 0.0313574
+CPUFrame's average period : 1.07054
+CPUSubmit's average period : 0.061192
+GPURendering's time average for 1sec is 0.977083ms
+
+#Run 3
+
+CPUBoneUpdate's average period : 0.0531227
+CPUFrame's average period : 1.17901
+CPUSubmit's average period : 0.0862975
+GPURendering's time average for 1sec is 0.968948ms
+CPUBoneUpdate's average period : 0.0317436
+CPUFrame's average period : 1.05564
+CPUSubmit's average period : 0.0614696
+GPURendering's time average for 1sec is 0.968663ms
+CPUBoneUpdate's average period : 0.0339835
+CPUFrame's average period : 1.06438
+CPUSubmit's average period : 0.0638784
+GPURendering's time average for 1sec is 0.975595ms
+CPUBoneUpdate's average period : 0.0296979
+CPUFrame's average period : 1.06512
+CPUSubmit's average period : 0.058135
+GPURendering's time average for 1sec is 0.976948ms
+
+
+	Bone	Submit	Frame	GPU
+final	0.033	0.064	1.32	1.22
+opt-11	0.032	0.061	1.06	0.97
+change			−19%	−21%

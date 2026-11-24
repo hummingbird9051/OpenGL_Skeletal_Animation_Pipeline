@@ -65,8 +65,8 @@ Final comparison (11/24, same day, same conditions)
 
 |             | Bone  | Submit | Frame | GPU  |
 | baseline-v2 | 0.038 | 4.16   | 7.47  | 7.16 |
-| final       | 0.033 | 0.064  | 1.32  | 1.22 |
-| change      |       | -98.5% | -82%  | -83% |
+| final       | 0.032 | 0.061  | 1.06  | 0.97 |
+| change      |       | -98.5% | -86%  | -86% |
 
 Bone is per character in baseline-v2 and per frame in final.
 

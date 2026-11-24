@@ -5,7 +5,11 @@
 #include<string>
 #include<vector>
 #include<memory>
+#define GLM_ENABLE_EXPERIMENTAL
 #include<glm/glm.hpp>
+#include<glm/gtc/matrix_transform.hpp>
+#include<glm/gtc/type_ptr.hpp>
+#include<glm/gtx/matrix_decompose.hpp>
 
 #include "imgui.h"
 #include "imgui_impl_glfw.h"
@@ -141,7 +145,7 @@ public:
 
 		// 두 번째 객체 정의 : 피라미드 --------------------------------------------------
 		// 피라미드 점들의 위치와 컬러, 텍스처 좌표를 정의한다.
-		GLfloat pyramid_vertices[] = {
+		vector<GLfloat> pyramid_vertices = {
 			1.0f, 0.0f, -1.0f,    // 우측 상단
 			-1.0f, 0.0f, -1.0f,   // 좌측 상단
 			-1.0f, 0.0f, 1.0f,    // 좌측 하단d
@@ -151,7 +155,7 @@ public:
 		};
 
 		// 삼각형으로 그릴 인덱스를 정의한다.
-		GLuint pyramid_indices[] = {
+		vector<GLuint> pyramid_indices = {
 			4, 0, 1,
 			4, 1, 2,
 			4, 2, 3,
@@ -164,10 +168,10 @@ public:
 		};
 
 		pyramidModel->init();
-		pyramidModel->setupMesh(6, pyramid_vertices);
-		pyramidModel->setupIndices(24, pyramid_indices);
+		pyramidModel->setupMesh(pyramid_vertices);
+		pyramidModel->setupIndices(pyramid_indices);
 
-		GLfloat plate_verticies[] = {
+		std::vector<GLfloat> plate_verticies = {
 			1.0f, 1.0f, 0.0f, 
 			- 1.0f, 1.0f, 0.0f,
 			1.0f, -1.0f, 0.0f,
@@ -176,7 +180,7 @@ public:
 			1.0f, -1.0f, 0.0f
 		};
 
-		GLfloat plate_texCoords[] = {
+		std::vector<GLfloat> plate_texCoords = {
 			20.0f, 20.0f,
 			0.0f, 20.0f,
 			20.0f, 0.0f,
@@ -185,7 +189,7 @@ public:
 			20.0f, 0.0f
 		};
 
-		GLfloat plate_normal[] = {
+		std::vector<GLfloat> plate_normal = {
 			0.0f, 0.0f, 1.0f,
 			0.0f, 0.0f, 1.0f,
 			0.0f, 0.0f, 1.0f,
@@ -195,7 +199,7 @@ public:
 		};
 
 		plateModel->init();
-		plateModel->setupMesh(6, plate_verticies, plate_texCoords, plate_normal); 
+		plateModel->setupMesh(plate_verticies, plate_texCoords, plate_normal); 
 		// If we make new class, use pointer paramiter in place of vector container to reduce Error. For now, we need to input the size of the primitive pointer, and this is dangerous.
 		plateModel->loadDiffuseMap("wall.jpg");
 
@@ -643,7 +647,6 @@ private:
 
 	float fov;
 
-	Assimp::Importer importer;
 
 	bool keyPressed_A = false;
 	bool keyPressed_D = false;

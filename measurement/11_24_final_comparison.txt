@@ -1,0 +1,84 @@
+11_24_final_comparison
+
+final program
+
+#Run 1
+
+CPUBoneUpdate's average period : 0.0543736
+CPUFrame's average period : 1.48825
+CPUSubmit's average period : 0.0926741
+GPURendering's time average for 1sec is 1.21617ms
+CPUBoneUpdate's average period : 0.0330925
+CPUFrame's average period : 1.31127
+CPUSubmit's average period : 0.0647969
+GPURendering's time average for 1sec is 1.21526ms
+CPUBoneUpdate's average period : 0.0360076
+CPUFrame's average period : 1.31828
+CPUSubmit's average period : 0.0686999
+GPURendering's time average for 1sec is 1.22371ms
+CPUBoneUpdate's average period : 0.0314088
+CPUFrame's average period : 1.31549
+CPUSubmit's average period : 0.0619219
+GPURendering's time average for 1sec is 1.21659ms
+
+#Run  2
+
+CPUBoneUpdate's average period : 0.0566009
+CPUFrame's average period : 1.49775
+CPUSubmit's average period : 0.0954028
+GPURendering's time average for 1sec is 1.21752ms
+CPUBoneUpdate's average period : 0.0316257
+CPUFrame's average period : 1.31825
+CPUSubmit's average period : 0.062924
+GPURendering's time average for 1sec is 1.22715ms
+CPUBoneUpdate's average period : 0.0330742
+CPUFrame's average period : 1.30753
+CPUSubmit's average period : 0.0630508
+GPURendering's time average for 1sec is 1.21503ms
+CPUBoneUpdate's average period : 0.0302758
+CPUFrame's average period : 1.32937
+CPUSubmit's average period : 0.0613162
+GPURendering's time average for 1sec is 1.23939ms
+
+#Run 3
+
+CPUBoneUpdate's average period : 0.0535136
+CPUFrame's average period : 1.49664
+CPUSubmit's average period : 0.0919783
+GPURendering's time average for 1sec is 1.22453ms
+CPUBoneUpdate's average period : 0.0328763
+CPUFrame's average period : 1.31588
+CPUSubmit's average period : 0.0652547
+GPURendering's time average for 1sec is 1.22234ms
+CPUBoneUpdate's average period : 0.0344992
+CPUFrame's average period : 1.31757
+CPUSubmit's average period : 0.0663368
+GPURendering's time average for 1sec is 1.22545ms
+CPUBoneUpdate's average period : 0.0300014
+CPUFrame's average period : 1.3166
+CPUSubmit's average period : 0.0614681
+GPURendering's time average for 1sec is 1.22582ms
+
+
+Final comparison (11/24, same day, same conditions)
+100 characters, ms, average of 9 samples: 3 runs x 3 seconds, warmup excluded
+
+|             | Bone  | Submit | Frame | GPU  |
+| baseline-v2 | 0.038 | 4.16   | 7.47  | 7.16 |
+| final       | 0.033 | 0.064  | 1.32  | 1.22 |
+| change      |       | -98.5% | -82%  | -83% |
+
+Bone is per character in baseline-v2 and per frame in final.
+
+Process memory (VS Diagnostic Tools, MB)
+
+|                         | Peak during load | Steady |
+| Debug   v0-university   | 819              | -      |
+| Debug   baseline-v2     | 559              | 318    |
+| Debug   final           | 501              | 267    |
+| Release baseline-v2     | 536              | 296    |
+| Release final           | 493              | 258    |
+
+v0-university was measured on 11/01. It depends on sb7, which is not in the repo, so it was not rebuilt.
+Process memory does not include VRAM.\
+

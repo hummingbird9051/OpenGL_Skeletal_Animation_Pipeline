@@ -359,7 +359,7 @@ public:
 
 				modelTime = !pause ? modelTime + deltaTime : modelTime;
 				if(!pause) objModel->setCurrentAnimationId(currentState, modelTime);
-				objModel->calculateTick(shader_program, modelTime);
+				objModel->calculateTick(modelTime);
 				objModelMatrices.assign(modelAmount, glm::mat4(1.0f));
 				for (int i = modelAmount - 1; i >= 0 ; i--) {
 					glm::vec3 pos = glm::vec3(static_cast<float>(i % columns * 0.6), 0.0f, static_cast<float>(i / columns * 0.6));

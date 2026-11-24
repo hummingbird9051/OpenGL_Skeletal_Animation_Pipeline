@@ -120,15 +120,17 @@ int main() {
 
 	int indicesSum = 0;
 	int verticesSum = 0;
+	int maxJoints = 0;
 	for (int i = 0; i < scene->mNumMeshes; i++) {
 		aiMesh* mesh = scene->mMeshes[i];
+		maxJoints = mesh->mNumBones > maxJoints ? mesh->mNumBones : maxJoints;
 		verticesSum += mesh->mNumVertices;
 		for (int j = 0; j < mesh->mNumFaces; j++) {
 			aiFace face = mesh->mFaces[j];
 			indicesSum += face.mNumIndices;
 		}
 	}
-
+	cout << "Model's maximum joints amount : " << maxJoints << endl;
 	cout << "Model's Indices amount : " << indicesSum << endl;
 	cout << "Model's Vertices amount : " << verticesSum << endl;
 	

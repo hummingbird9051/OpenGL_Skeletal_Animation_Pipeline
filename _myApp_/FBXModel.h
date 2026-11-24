@@ -5,14 +5,14 @@
 #include "Model.h"
 #include "CPUProfiler.h"
 #include "GPUProfiler.h"
-
+#define MAX_JOINTS 52 //Set the same as shader's MAX_JOINTS
 using namespace std;
 
 
-struct VertexBoneData
+struct VertexJointWeights
 {
 	vector<float> weight;
-	vector<int> boneIndex;
+	vector<int> jointIndex;
 };
 
 class FBXModel : public Model
@@ -41,7 +41,7 @@ private:
 		vector<int> nodeToChannel;
 	};
 
-	struct SkeletonBone {
+	struct Node {
 		string name;
 		glm::vec3 translate = glm::vec3(1.0f);
 		glm::quat rotate = glm::mat4(1.0f);
@@ -50,7 +50,7 @@ private:
 		vector<int> children;
 	};
 
-	struct JointsFromMesh {
+	struct Skin {
 		vector<int> jointNodeIds;
 		vector<glm::mat4> inverseBindMatrices;
 	};
@@ -80,7 +80,7 @@ private:
 	double lastAnimStartedTime = 0.0;
 	double transitionLength = 0.5;
 
-	vector<SkeletonBone> nodes;
+	vector<Node> nodes;
 
 	glm::mat4 globalInverseRootTransform = glm::mat4(1.0f);
 
@@ -91,21 +91,21 @@ private:
 	vector<GLuint> meshesVBOBoneID;
 	vector<GLuint> meshesVBOWeights;
 	vector<GLuint> meshesEBO;
-	GLuint UboMatrices = 0;
+	GLuint skinningUBO = 0;
 	GLuint SSBOId = 0;
 
 	vector<GLuint> meshesTexture;
 
-	vector<JointsFromMesh> jointsFromMeshes;
-	vector<vector<glm::mat4>> currentSkinningEachMeshes; // Skinning value with each meshes joints
+	vector<Skin> meshSkins;
+	vector<vector<glm::mat4>> meshSkinningMatrices; // Skinning value with each meshes joints
 
 	vector<vector<glm::vec3>> positionMesh;
 	vector<vector<glm::vec2>> texCoordMesh;
 	vector<vector<glm::vec3>> normalMesh;
 	vector<vector<GLuint>> vIndicesMesh;
-	vector<vector<VertexBoneData>> boneDataMesh;					//relationship with vertex and bone
+	vector<vector<VertexJointWeights>> jointWeightsMesh;					//relationship with vertex and bone
 
-	vector<glm::mat4> nodeGlobalTransforms; //global transform per node (indexed by node), used by UpdateAndCalculateMatrix()
+	vector<glm::mat4> nodeGlobalTransforms; //global transform per node (indexed by node), used by updatePose()
 
 	int modelAmount = 0;
 
@@ -184,7 +184,7 @@ public:
 			glDeleteTextures(1, &meshesTexture[i]);
 			glDeleteBuffers(1, &meshesEBO[i]);
 		}
-		glDeleteBuffers(1, &UboMatrices);
+		glDeleteBuffers(1, &skinningUBO);
 		glDeleteBuffers(1, &SSBOId);
 	}
 
@@ -200,7 +200,7 @@ public:
 			glGenTextures(1, &meshesTexture[i]);
 			glGenBuffers(1, &meshesEBO[i]);
 		}
-		glGenBuffers(1, &UboMatrices);
+		glGenBuffers(1, &skinningUBO);
 		glGenBuffers(1, &SSBOId);
 	}
 
@@ -245,7 +245,7 @@ public:
 
 		//refactor: Bone data saving(from scene)
 		nodes.clear();
-		saveBoneData(scene->mRootNode, -1);
+		saveNodes(scene->mRootNode, -1);
 		aiMatrix4x4 invRootTransformAssimp = scene->mRootNode->mTransformation;
 		invRootTransformAssimp = invRootTransformAssimp.Inverse();
 		globalInverseRootTransform = aiMatToGlmMat(invRootTransformAssimp);
@@ -255,7 +255,7 @@ public:
 		}
 
 		//Collect Mesh Information
-		boneDataMesh.resize(scene->mNumMeshes);
+		jointWeightsMesh.resize(scene->mNumMeshes);
 		for (unsigned int meshIdx = 0; meshIdx < scene->mNumMeshes; meshIdx++)
 		{
 			const aiMesh* mesh = scene->mMeshes[meshIdx];
@@ -263,12 +263,12 @@ public:
 			vector<glm::vec2> tmpTexCoords;
 			vector<glm::vec3> tmpNormals;
 			vector<GLuint> tmpVIndices;
-			vector<VertexBoneData> tmpBoneData;
+			vector<VertexJointWeights> tmpBoneData;
 
 			//cout << mesh->mName.C_Str() << std::endl;
 			//collect vertex information
 			tmpBoneData.resize(mesh->mNumVertices);
-			for (unsigned i = 0; i < mesh->mNumVertices; ++i)
+			for (unsigned int i = 0; i < mesh->mNumVertices; ++i)
 			{
 				aiVector3D vPosition;
 				aiVector3D vNormal;
@@ -314,32 +314,36 @@ public:
 			meshesEBO.push_back(0);
 			meshesTexture.push_back(0);
 
-			JointsFromMesh tempJointFromMesh;
+			Skin tempJointFromMesh;
 
 			tempJointFromMesh.jointNodeIds.assign(mesh->mNumBones, -1);
 			tempJointFromMesh.inverseBindMatrices.assign(mesh->mNumBones, glm::mat4(1.0f));
 
-			for (unsigned int boneMeshId = 0; boneMeshId < mesh->mNumBones; boneMeshId++)
-			{
-				aiBone* bone_mesh = mesh->mBones[boneMeshId];
+			if (mesh->mNumBones > MAX_JOINTS) {
+				std::cerr << "Over maximum joints amount. please adjust maxumum joints amount" << std::endl;
+			}
 
-				auto it = nameToNodeId.find(bone_mesh->mName.C_Str());
+			for (unsigned int jointIdx = 0; jointIdx < mesh->mNumBones; jointIdx++)
+			{
+				aiBone* aiJoint = mesh->mBones[jointIdx];
+
+				auto it = nameToNodeId.find(aiJoint->mName.C_Str());
 				if (it != nameToNodeId.end()) {
-					tempJointFromMesh.jointNodeIds[boneMeshId] = it->second;
-					tempJointFromMesh.inverseBindMatrices[boneMeshId] = aiMatToGlmMat(bone_mesh->mOffsetMatrix);
+					tempJointFromMesh.jointNodeIds[jointIdx] = it->second;
+					tempJointFromMesh.inverseBindMatrices[jointIdx] = aiMatToGlmMat(aiJoint->mOffsetMatrix);
 				}
 				else {
-					std::cerr << "Can't find the joint's name" << bone_mesh->mName.C_Str() << std::endl;
+					std::cerr << "Can't find the joint's name" << aiJoint->mName.C_Str() << std::endl;
 				}
 
-				for (unsigned int id = 0; id < bone_mesh->mNumWeights; id++) {
-					int vertexId = bone_mesh->mWeights[id].mVertexId;
-					float weight_val = bone_mesh->mWeights[id].mWeight;
+				for (unsigned int id = 0; id < aiJoint->mNumWeights; id++) {
+					int vertexId = aiJoint->mWeights[id].mVertexId;
+					float weight_val = aiJoint->mWeights[id].mWeight;
 
 
 					if (tmpBoneData[vertexId].weight.size() < 4) {
 						tmpBoneData[vertexId].weight.push_back(weight_val);
-						tmpBoneData[vertexId].boneIndex.push_back(boneMeshId);
+						tmpBoneData[vertexId].jointIndex.push_back(jointIdx);
 					}
 					else {
 						int minIdx = 0;
@@ -352,22 +356,22 @@ public:
 						}
 						if (minWeight < weight_val) {
 							tmpBoneData[vertexId].weight[minIdx] = weight_val;
-							tmpBoneData[vertexId].boneIndex[minIdx] = boneMeshId;
+							tmpBoneData[vertexId].jointIndex[minIdx] = jointIdx;
 						}
 					}
 				}
 			}
-			jointsFromMeshes.push_back(tempJointFromMesh);
+			meshSkins.push_back(tempJointFromMesh);
 
 
 			for (int vIdx = 0; vIdx < tmpBoneData.size(); vIdx++)
 			{
-				VertexBoneData& currentBoneData = tmpBoneData[vIdx];
+				VertexJointWeights& currentBoneData = tmpBoneData[vIdx];
 				while (currentBoneData.weight.size() < 4) {
 					currentBoneData.weight.push_back(0.0f);
 				}
-				while (currentBoneData.boneIndex.size() < 4) {
-					currentBoneData.boneIndex.push_back(0);
+				while (currentBoneData.jointIndex.size() < 4) {
+					currentBoneData.jointIndex.push_back(0);
 				}
 				float weightSum = 0;
 				for (int wId = 0; wId < 4; wId++) {
@@ -378,15 +382,15 @@ public:
 						currentBoneData.weight[wId] = currentBoneData.weight[wId] / weightSum;
 					}
 				}
-				boneDataMesh[meshIdx].push_back(currentBoneData);
+				jointWeightsMesh[meshIdx].push_back(currentBoneData);
 			}
 
 		}
 
 		//make space for each draw call's skinning calculation val
-		currentSkinningEachMeshes.assign(jointsFromMeshes.size(), vector<glm::mat4>());
-		for (int i = 0; i < jointsFromMeshes.size(); i++) {
-			currentSkinningEachMeshes[i].assign(jointsFromMeshes[i].inverseBindMatrices.size(), glm::mat4(1.0f));
+		meshSkinningMatrices.assign(meshSkins.size(), vector<glm::mat4>());
+		for (int i = 0; i < meshSkins.size(); i++) {
+			meshSkinningMatrices[i].assign(meshSkins[i].inverseBindMatrices.size(), glm::mat4(1.0f));
 		}
 
 
@@ -413,13 +417,7 @@ public:
 		loadDiffuseMap("");
 	}
 
-	void calculateTick(GLuint _shaderID, double currentTime) {
-		if (_shaderID != shaderInfo.shaderId) setShaderInfo(_shaderID);
-		glUniform3fv(shaderInfo.ulDefaultAmbient, 1, glm::value_ptr(defaultAmbient));
-		glUniform3fv(shaderInfo.ulDefaultDiffuse, 1, glm::value_ptr(defaultDiffuse));
-		glUniform3fv(shaderInfo.ulDefaultSpecular, 1, glm::value_ptr(defaultSpecular));
-		glUniform1i(shaderInfo.ulUseDiffuseMap, (int)useDiffuseMap);
-		glUniform1i(shaderInfo.ulUseSpecularMap, (int)useSpecularMap);
+	void calculateTick(double currentTime) {
 		if (animations.size() > currentAnimationId && currentAnimationId >= 0) {
 			double lastedSinceChange = currentTime - currentAnimStartedTime;
 			double lastAnimTick = fmod((currentTime - lastAnimStartedTime) * animations[lastAnimationId].tickperSec, animations[lastAnimationId].duration);
@@ -427,27 +425,33 @@ public:
 			double w = lastedSinceChange / transitionLength;
 			{
 				CPUProfiler boneProfile(CPUBoneUpdate);
-				updateAndCalculateMatrix(lastAnimTick, currentAnimTick, w);
+				updatePose(lastAnimTick, currentAnimTick, w);
 			}
 		}
 	}
 
 	void setModelMatrices(const vector<glm::mat4>& matrices) {
 		glBindBuffer(GL_SHADER_STORAGE_BUFFER, SSBOId);
-		modelAmount = matrices.size();
+		modelAmount = static_cast<int>(matrices.size());
 		glBufferData(GL_SHADER_STORAGE_BUFFER, modelAmount * sizeof(glm::mat4), nullptr, GL_DYNAMIC_DRAW);
 		glBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, modelAmount *sizeof(glm::mat4), matrices.data());
-		glBindBuffer(GL_SHADER_STORAGE_BUFFER, SSBOId);
+		glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
 	}
 
 	void draw(GLuint _shaderID, double currentTime) override {
+		if (_shaderID != shaderInfo.shaderId) setShaderInfo(_shaderID);
+		glUniform3fv(shaderInfo.ulDefaultAmbient, 1, glm::value_ptr(defaultAmbient));
+		glUniform3fv(shaderInfo.ulDefaultDiffuse, 1, glm::value_ptr(defaultDiffuse));
+		glUniform3fv(shaderInfo.ulDefaultSpecular, 1, glm::value_ptr(defaultSpecular));
+		glUniform1i(shaderInfo.ulUseDiffuseMap, (int)useDiffuseMap);
+		glUniform1i(shaderInfo.ulUseSpecularMap, (int)useSpecularMap);
 		for (int i = 0; i < meshesVAO.size(); i++)
 		{
 			//Setting UBO offset
-			glBindBuffer(GL_UNIFORM_BUFFER, UboMatrices);
-			glBufferData(GL_UNIFORM_BUFFER, currentSkinningEachMeshes[i].size() * sizeof(glm::mat4), nullptr, GL_DYNAMIC_DRAW);
-			glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(glm::mat4) * currentSkinningEachMeshes[i].size(), currentSkinningEachMeshes[i].data());
-
+			glBindBuffer(GL_UNIFORM_BUFFER, skinningUBO);
+			glBufferData(GL_UNIFORM_BUFFER, MAX_JOINTS * sizeof(glm::mat4), nullptr, GL_DYNAMIC_DRAW);
+			glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(glm::mat4) * meshSkinningMatrices[i].size(), meshSkinningMatrices[i].data());
+			
 			glBindBuffer(GL_UNIFORM_BUFFER, 0);
 
 			glUniform1i(shaderInfo.ulUseNormal, (int)normalMesh[i].size());
@@ -508,20 +512,20 @@ protected:
 				glEnableVertexAttribArray(2);
 			}
 
-			if (!boneDataMesh[i].empty())
+			if (!jointWeightsMesh[i].empty())
 			{
 				vector<glm::ivec4> boneIndicesPerVertex;
 				vector<glm::vec4> boneWeightsPerVertex;
 
-				boneIndicesPerVertex.reserve(boneDataMesh[i].size());
-				boneWeightsPerVertex.reserve(boneDataMesh[i].size());
+				boneIndicesPerVertex.reserve(jointWeightsMesh[i].size());
+				boneWeightsPerVertex.reserve(jointWeightsMesh[i].size());
 
-				for (const auto& vertexBoneData : boneDataMesh[i])
+				for (const auto& vertexBoneData : jointWeightsMesh[i])
 				{
 					glm::ivec4 indices;
 					glm::vec4 weights;
 					for (int j = 0; j < 4; j++) {
-						indices[j] = (j < vertexBoneData.boneIndex.size()) ? vertexBoneData.boneIndex[j] : 0;
+						indices[j] = (j < vertexBoneData.jointIndex.size()) ? vertexBoneData.jointIndex[j] : 0;
 						weights[j] = (j < vertexBoneData.weight.size()) ? vertexBoneData.weight[j] : 0;
 					}
 					boneIndicesPerVertex.push_back(indices);
@@ -546,13 +550,11 @@ protected:
 			glBindVertexArray(0);
 			glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 		}
-		glBindBuffer(GL_UNIFORM_BUFFER, UboMatrices);
-		glBufferData(GL_UNIFORM_BUFFER, 258 * sizeof(glm::mat4), nullptr, GL_DYNAMIC_DRAW);
-		glBindBufferBase(GL_UNIFORM_BUFFER, 0, UboMatrices);
+		glBindBuffer(GL_UNIFORM_BUFFER, skinningUBO);
+		glBindBufferBase(GL_UNIFORM_BUFFER, 0, skinningUBO);
 		glBindBuffer(GL_UNIFORM_BUFFER, 0);
 
 		glBindBuffer(GL_SHADER_STORAGE_BUFFER, SSBOId);
-		glBufferData(GL_SHADER_STORAGE_BUFFER, 100 * sizeof(glm::mat4), nullptr, GL_DYNAMIC_DRAW);
 		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, SSBOId);
 		glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
 	}	
@@ -570,7 +572,7 @@ protected:
 	}
 
 private:
-	void updateAndCalculateMatrix(double lastAnimTick, double currentAnimTick, double w) {
+	void updatePose(double lastAnimTick, double currentAnimTick, double w) {
 		w = clamp(w, 0.0, 1.0);
 		for (int nodeIdx = 0; nodeIdx < nodes.size(); nodeIdx++) {
 			glm::mat4 localNodeTransform;
@@ -626,27 +628,27 @@ private:
 			if (p == -1) nodeGlobalTransforms[nodeIdx] = localNodeTransform;
 			else nodeGlobalTransforms[nodeIdx] = nodeGlobalTransforms[p] * localNodeTransform;
 		}
-		for (int i = 0; i < jointsFromMeshes.size(); i++) {
-			for (int j = 0; j < jointsFromMeshes[i].jointNodeIds.size(); j++) {
-				if (jointsFromMeshes[i].jointNodeIds[j] == -1) currentSkinningEachMeshes[i][j] = glm::mat4(1.0f);
-				else currentSkinningEachMeshes[i][j] = globalInverseRootTransform * nodeGlobalTransforms[jointsFromMeshes[i].jointNodeIds[j]] * jointsFromMeshes[i].inverseBindMatrices[j];
+		for (int i = 0; i < meshSkins.size(); i++) {
+			for (int j = 0; j < meshSkins[i].jointNodeIds.size(); j++) {
+				if (meshSkins[i].jointNodeIds[j] == -1) meshSkinningMatrices[i][j] = glm::mat4(1.0f);
+				else meshSkinningMatrices[i][j] = globalInverseRootTransform * nodeGlobalTransforms[meshSkins[i].jointNodeIds[j]] * meshSkins[i].inverseBindMatrices[j];
 			}
 		}
 	}
 
-	int saveBoneData(const aiNode* cur, int parentInfo) {
+	int saveNodes(const aiNode* cur, int parentInfo) {
 		if (!cur) return -1;
 		glm::mat4 matrix = aiMatToGlmMat(cur->mTransformation);
 		glm::vec3 trash1;
 		glm::vec4 trash2;
-		SkeletonBone temp;
+		Node temp;
 		temp.name = cur->mName.C_Str();
 		temp.parent = parentInfo;
 		glm::decompose(matrix, temp.scale, temp.rotate, temp.translate, trash1, trash2);
 		nodes.push_back(std::move(temp));
 		int currInfo = static_cast<int>(nodes.size()) - 1;
 		for (unsigned int i = 0; i < cur->mNumChildren; i++) {
-			int childrenInfo = saveBoneData(cur->mChildren[i], currInfo);
+			int childrenInfo = saveNodes(cur->mChildren[i], currInfo);
 			if (childrenInfo >= 0) nodes[currInfo].children.push_back(childrenInfo);
 		}
 		return currInfo;

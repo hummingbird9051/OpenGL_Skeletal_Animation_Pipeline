@@ -163,10 +163,10 @@ public:
 		glUniform3fv(glGetUniformLocation(_shaderID, "material.defaultAmbient"), 1, glm::value_ptr(defaultAmbient));
 		glUniform3fv(glGetUniformLocation(_shaderID, "material.defaultDiffuse"), 1, glm::value_ptr(defaultDiffuse));
 		glUniform3fv(glGetUniformLocation(_shaderID, "material.defaultSpecular"), 1, glm::value_ptr(defaultSpecular));
-		glUniform1i(glGetUniformLocation(_shaderID, "material.useDiffuseMap"), (int)useDiffuseMap);
-		glUniform1i(glGetUniformLocation(_shaderID, "material.useSpecularMap"), (int)useSpecularMap);
+		glUniform1i(glGetUniformLocation(_shaderID, "material.useDiffuseMap"), static_cast<int>(useDiffuseMap));
+		glUniform1i(glGetUniformLocation(_shaderID, "material.useSpecularMap"), static_cast<int>(useSpecularMap));
 
-		glUniform1i(glGetUniformLocation(_shaderID, "useNormal"), (int)vNormals.size());
+		glUniform1i(glGetUniformLocation(_shaderID, "useNormal"), static_cast<int>(vNormals.size()));
 		glUniform1f(glGetUniformLocation(_shaderID, "material.shininess"), shininess);
 		//Solve CPU bottle-neck.
 
@@ -207,20 +207,20 @@ protected:
 		glBindBuffer(GL_ARRAY_BUFFER, VBO_positions);
 		glBufferData(GL_ARRAY_BUFFER, vPositions.size() * sizeof(glm::vec3), &vPositions[0], GL_STATIC_DRAW);
 		glEnableVertexAttribArray(0);
-		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), reinterpret_cast<void*>(0));
 
 		if (!vTexCoords.empty()) {
 			glBindBuffer(GL_ARRAY_BUFFER, VBO_texCoords);
 			glBufferData(GL_ARRAY_BUFFER, vTexCoords.size() * sizeof(glm::vec2), &vTexCoords[0], GL_STATIC_DRAW);
 			glEnableVertexAttribArray(1);
-			glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), (void*)0);
+			glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), reinterpret_cast<void*>(0));
 		}
 
 		if (!vNormals.empty()) {
 			glBindBuffer(GL_ARRAY_BUFFER, VBO_normals);
 			glBufferData(GL_ARRAY_BUFFER, vNormals.size() * sizeof(glm::vec3), &vNormals[0], GL_STATIC_DRAW);
 			glEnableVertexAttribArray(2);
-			glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+			glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), reinterpret_cast<void*>(0));
 		}
 
 		glBindBuffer(GL_ARRAY_BUFFER, 0);

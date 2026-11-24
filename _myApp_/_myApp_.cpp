@@ -13,7 +13,8 @@
 #include "Model.h"
 #include "FBXModel.h"
 #include "PostProcessing.h"
-
+#include "GPUProfiler.h"
+#include "CPUProfiler.h"
 using namespace std;
 
 static void glfwErrorCallback(int error, const char* description) {
@@ -358,7 +359,7 @@ public:
 
 				modelTime = !pause ? modelTime + deltaTime : modelTime;
 				if(!pause) objModel->setCurrentAnimationId(currentState, modelTime);
-				objModel->calculateTick(modelTime);
+				objModel->updateAnimation(modelTime);
 				objModelMatrices.assign(modelAmount, glm::mat4(1.0f));
 				for (int i = modelAmount - 1; i >= 0 ; i--) {
 					glm::vec3 pos = glm::vec3(static_cast<float>(i % columns * 0.6), 0.0f, static_cast<float>(i / columns * 0.6));
@@ -368,7 +369,7 @@ public:
 					objModelMatrices[modelAmount - 1 - i] = std::move(model);
 				}
 				objModel->setModelMatrices(objModelMatrices);
-				objModel->draw(shader_program, modelTime);
+				objModel->draw(shader_program);
 
 
 

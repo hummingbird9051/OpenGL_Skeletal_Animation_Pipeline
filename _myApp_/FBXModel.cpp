@@ -4,10 +4,8 @@
 #include<filesystem>
 
 #define GLM_ENABLE_EXPERIMENTAL
-#include<glm/glm.hpp>
 #include<glm/gtc/matrix_transform.hpp>
 #include<glm/gtc/type_ptr.hpp>
-#include<glm/gtc/quaternion.hpp>
 #include<glm/gtx/matrix_decompose.hpp>
 
 #include<assimp/Importer.hpp>
@@ -110,8 +108,8 @@ FBXModel::~FBXModel() {
 		glDeleteBuffers(1, &meshesVBOPosition[i]);
 		glDeleteBuffers(1, &meshesVBONormal[i]);
 		glDeleteBuffers(1, &meshesVBOTexCoord[i]);
-		glDeleteBuffers(1, &meshesVBOBoneID[i]);
-		glDeleteBuffers(1, &meshesVBOWeights[i]);
+		glDeleteBuffers(1, &meshesVBOJointIndices[i]);
+		glDeleteBuffers(1, &meshesVBOJointWeights[i]);
 		glDeleteTextures(1, &meshesTexture[i]);
 		glDeleteBuffers(1, &meshesEBO[i]);
 	}
@@ -126,8 +124,8 @@ void FBXModel::init() {
 		glGenBuffers(1, &meshesVBOPosition[i]);
 		glGenBuffers(1, &meshesVBONormal[i]);
 		glGenBuffers(1, &meshesVBOTexCoord[i]);
-		glGenBuffers(1, &meshesVBOBoneID[i]);
-		glGenBuffers(1, &meshesVBOWeights[i]);
+		glGenBuffers(1, &meshesVBOJointIndices[i]);
+		glGenBuffers(1, &meshesVBOJointWeights[i]);
 		glGenTextures(1, &meshesTexture[i]);
 		glGenBuffers(1, &meshesEBO[i]);
 	}
@@ -237,8 +235,8 @@ void FBXModel::loadFBX(const std::string& objectFileName, const std::vector<std:
 		meshesVBOPosition.push_back(0);
 		meshesVBONormal.push_back(0);
 		meshesVBOTexCoord.push_back(0);
-		meshesVBOBoneID.push_back(0);
-		meshesVBOWeights.push_back(0);
+		meshesVBOJointIndices.push_back(0);
+		meshesVBOJointWeights.push_back(0);
 		meshesEBO.push_back(0);
 		meshesTexture.push_back(0);
 
@@ -458,12 +456,12 @@ void FBXModel::prepareBuffers() {
 				boneWeightsPerVertex.push_back(weights);
 			}
 
-			glBindBuffer(GL_ARRAY_BUFFER, meshesVBOBoneID[i]);
+			glBindBuffer(GL_ARRAY_BUFFER, meshesVBOJointIndices[i]);
 			glBufferData(GL_ARRAY_BUFFER, boneIndicesPerVertex.size() * sizeof(glm::ivec4), boneIndicesPerVertex.data(), GL_STATIC_DRAW);
 			glVertexAttribIPointer(3, 4, GL_INT, sizeof(glm::ivec4), reinterpret_cast<void*>(0));
 			glEnableVertexAttribArray(3);
 
-			glBindBuffer(GL_ARRAY_BUFFER, meshesVBOWeights[i]);
+			glBindBuffer(GL_ARRAY_BUFFER, meshesVBOJointWeights[i]);
 			glBufferData(GL_ARRAY_BUFFER, boneWeightsPerVertex.size() * sizeof(glm::vec4), boneWeightsPerVertex.data(), GL_STATIC_DRAW);
 			glVertexAttribPointer(4, 4, GL_FLOAT, GL_FALSE, sizeof(glm::vec4), reinterpret_cast<void*>(0));
 			glEnableVertexAttribArray(4);

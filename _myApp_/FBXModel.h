@@ -2,8 +2,13 @@
 #include<glad/glad.h>
 #include<string>
 #include<vector>
+#include<unordered_map>
+#include<glm/glm.hpp>
+#include<glm/gtc/quaternion.hpp>
+#include "Material.h"
 
-
+struct aiScene;
+struct aiNode;
 
 struct VertexJointWeights
 {
@@ -39,8 +44,8 @@ private:
 
 	struct Node {
 		std::string name;
-		glm::vec3 translate = glm::vec3(1.0f);
-		glm::quat rotate = glm::mat4(1.0f);
+		glm::vec3 translate = glm::vec3(0.0f);
+		glm::quat rotate = glm::quat(1, 0, 0, 0);
 		glm::vec3 scale = glm::vec3(1.0f);
 		int parent = -1;
 		std::vector<int> children;
@@ -86,8 +91,8 @@ private:
 	std::vector<GLuint> meshesVBOPosition;
 	std::vector<GLuint> meshesVBONormal;
 	std::vector<GLuint> meshesVBOTexCoord;
-	std::vector<GLuint> meshesVBOBoneID;
-	std::vector<GLuint> meshesVBOWeights;
+	std::vector<GLuint> meshesVBOJointIndices;
+	std::vector<GLuint> meshesVBOJointWeights;
 	std::vector<GLuint> meshesEBO;
 	GLuint skinningUBO = 0;
 	GLuint SSBOId = 0;
@@ -101,13 +106,13 @@ private:
 	std::vector<std::vector<glm::vec2>> texCoordMesh;
 	std::vector<std::vector<glm::vec3>> normalMesh;
 	std::vector<std::vector<GLuint>> vIndicesMesh;
-	std::vector<std::vector<VertexJointWeights>> jointWeightsMesh;					//relationship with vertex and bone
+	std::vector<std::vector<VertexJointWeights>> jointWeightsMesh;					//relationship with vertex and joint
 
 	std::vector<glm::mat4> nodeGlobalTransforms; //global transform per node (indexed by node), used by updatePose()
 
 	int modelAmount = 0;
 
-	int loadAnimation(const aiScene* scene, std::string originalFileName);
+	int loadAnimation(const aiScene* scene, const std::string& originalFileName);
 
 public:
 	FBXModel();
@@ -116,32 +121,29 @@ public:
 
 	void init();
 
-	// TODO: change into Universal code.
-	// Refactoring plan: Change to texfile const string& and save size also
-	// for safety, need to be changed to for context
+	// TODO: Texture paths are hardcoded per mesh. Read them from the FBX materials.
 	bool loadDiffuseMap(const char* texFile);
 
-	void loadFBX(std::string objectFileName, std::vector<std::string> animationFileName);
+	void loadFBX(const std::string& objectFileName, const std::vector<std::string>& animationFileName);
 
-	void calculateTick(double currentTime);
+	void updateAnimation(double currentTime);
 
 	void setModelMatrices(const std::vector<glm::mat4>& matrices);
 
-	void draw(GLuint _shaderID, double currentTime);
+	void draw(GLuint _shaderID);
 
-	void setCurrentAnimationId(std::string animationName, double currentTime);
+	void setCurrentAnimationId(const std::string& animationName, double currentTime);
 
-protected:
+private:
 	void prepareBuffers();
 
 	void setShaderInfo(GLuint _shaderId);
 
-private:
 	void updatePose(double lastAnimTick, double currentAnimTick, double w);
 
 	int saveNodes(const aiNode* cur, int parentInfo);
 	
-	static glm::vec3 pickKey(const std::vector<Animation::Channel::VectorKey>& keys, double tickTime);
+	glm::vec3 pickKey(const std::vector<Animation::Channel::VectorKey>& keys, double tickTime);
 
-	static glm::quat pickKey(const std::vector<Animation::Channel::QuaternionKey>& keys, double tickTime);
+	glm::quat pickKey(const std::vector<Animation::Channel::QuaternionKey>& keys, double tickTime);
 };

@@ -167,8 +167,10 @@
     <ClCompile Include="..\extern\imgui\imgui_draw.cpp" />
     <ClCompile Include="..\extern\imgui\imgui_tables.cpp" />
     <ClCompile Include="..\extern\imgui\imgui_widgets.cpp" />
+    <ClCompile Include="FBXModel.cpp" />
     <ClCompile Include="GPUProfiler.cpp" />
     <ClCompile Include="CPUProfiler.cpp" />
+    <ClCompile Include="Model.cpp" />
     <ClCompile Include="Texture.cpp" />
     <ClCompile Include="_myApp_.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>

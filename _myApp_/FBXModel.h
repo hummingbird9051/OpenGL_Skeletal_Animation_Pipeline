@@ -1,21 +1,38 @@
 ﻿#pragma once
-#include <iostream>
-#include<map>
+#include<glad/glad.h>
+#include<string>
+#include<vector>
+#include<unordered_map>
+#include<algorithm>
+#include<iostream>
 #include<filesystem>
-#include "Model.h"
+
+#define GLM_ENABLE_EXPERIMENTAL
+#include<glm/glm.hpp>
+#include<glm/gtc/matrix_transform.hpp>
+#include<glm/gtc/type_ptr.hpp>
+#include<glm/gtc/quaternion.hpp>
+#include<glm/gtx/matrix_decompose.hpp>
+
+#include<assimp/Importer.hpp>
+#include<assimp/scene.h>
+#include<assimp/postprocess.h>
+
+
 #include "CPUProfiler.h"
 #include "GPUProfiler.h"
+#include "Material.h"
+#include "Texture.h"
 #define MAX_JOINTS 52 //Set the same as shader's MAX_JOINTS
-using namespace std;
 
 
 struct VertexJointWeights
 {
-	vector<float> weight;
-	vector<int> jointIndex;
+	std::vector<float> weight;
+	std::vector<int> jointIndex;
 };
 
-class FBXModel : public Model
+class FBXModel
 {
 private:
 	struct Animation {
@@ -29,30 +46,30 @@ private:
 				glm::quat value;
 			};
 
-			string name;
-			vector<VectorKey> positionKeys;
-			vector<QuaternionKey> rotationKeys;
-			vector<VectorKey> scalingKeys;
+			std::string name;
+			std::vector<VectorKey> positionKeys;
+			std::vector<QuaternionKey> rotationKeys;
+			std::vector<VectorKey> scalingKeys;
 		};
 		double duration = 0.0;
 		double tickperSec = 0.0;
-		vector<Channel> channels;
-		unordered_map<string, int> channelIndexByName;
-		vector<int> nodeToChannel;
+		std::vector<Channel> channels;
+		std::unordered_map<std::string, int> channelIndexByName;
+		std::vector<int> nodeToChannel;
 	};
 
 	struct Node {
-		string name;
+		std::string name;
 		glm::vec3 translate = glm::vec3(1.0f);
 		glm::quat rotate = glm::mat4(1.0f);
 		glm::vec3 scale = glm::vec3(1.0f);
 		int parent = -1;
-		vector<int> children;
+		std::vector<int> children;
 	};
 
 	struct Skin {
-		vector<int> jointNodeIds;
-		vector<glm::mat4> inverseBindMatrices;
+		std::vector<int> jointNodeIds;
+		std::vector<glm::mat4> inverseBindMatrices;
 	};
 
 	struct ShaderInfo {
@@ -70,8 +87,8 @@ private:
 
 	ShaderInfo shaderInfo;
 
-	vector<Animation> animations;
-	unordered_map<string, int> findAnimation;
+	std::vector<Animation> animations;
+	std::unordered_map<std::string, int> findAnimation;
 
 	int currentAnimationId = 1;
 	int lastAnimationId = 1;
@@ -80,44 +97,46 @@ private:
 	double lastAnimStartedTime = 0.0;
 	double transitionLength = 0.5;
 
-	vector<Node> nodes;
+	std::vector<Node> nodes;
 
 	glm::mat4 globalInverseRootTransform = glm::mat4(1.0f);
+	
+	Material material;
 
-	vector<GLuint> meshesVAO;
-	vector<GLuint> meshesVBOPosition;
-	vector<GLuint> meshesVBONormal;
-	vector<GLuint> meshesVBOTexCoord;
-	vector<GLuint> meshesVBOBoneID;
-	vector<GLuint> meshesVBOWeights;
-	vector<GLuint> meshesEBO;
+	std::vector<GLuint> meshesVAO;
+	std::vector<GLuint> meshesVBOPosition;
+	std::vector<GLuint> meshesVBONormal;
+	std::vector<GLuint> meshesVBOTexCoord;
+	std::vector<GLuint> meshesVBOBoneID;
+	std::vector<GLuint> meshesVBOWeights;
+	std::vector<GLuint> meshesEBO;
 	GLuint skinningUBO = 0;
 	GLuint SSBOId = 0;
 
-	vector<GLuint> meshesTexture;
+	std::vector<GLuint> meshesTexture;
 
-	vector<Skin> meshSkins;
-	vector<vector<glm::mat4>> meshSkinningMatrices; // Skinning value with each meshes joints
+	std::vector<Skin> meshSkins;
+	std::vector<std::vector<glm::mat4>> meshSkinningMatrices; // Skinning value with each meshes joints
 
-	vector<vector<glm::vec3>> positionMesh;
-	vector<vector<glm::vec2>> texCoordMesh;
-	vector<vector<glm::vec3>> normalMesh;
-	vector<vector<GLuint>> vIndicesMesh;
-	vector<vector<VertexJointWeights>> jointWeightsMesh;					//relationship with vertex and bone
+	std::vector<std::vector<glm::vec3>> positionMesh;
+	std::vector<std::vector<glm::vec2>> texCoordMesh;
+	std::vector<std::vector<glm::vec3>> normalMesh;
+	std::vector<std::vector<GLuint>> vIndicesMesh;
+	std::vector<std::vector<VertexJointWeights>> jointWeightsMesh;					//relationship with vertex and bone
 
-	vector<glm::mat4> nodeGlobalTransforms; //global transform per node (indexed by node), used by updatePose()
+	std::vector<glm::mat4> nodeGlobalTransforms; //global transform per node (indexed by node), used by updatePose()
 
 	int modelAmount = 0;
 
-	int loadAnimation(const aiScene* scene, string originalFileName) {
+	int loadAnimation(const aiScene* scene, std::string originalFileName) {
 		if (scene->mNumAnimations == 0) {
 			return 0;
 		}
-		string filename = std::filesystem::path(originalFileName).stem().string();
+		std::string filename = std::filesystem::path(originalFileName).stem().string();
 		int putCount = 0;
 		for (unsigned int animIdx = 0; animIdx < scene->mNumAnimations; animIdx++) {
-			if (findAnimation.count(filename + "_" + to_string(animIdx)) != 0) {
-				cerr << "There's " << filename << " animation already" << endl;
+			if (findAnimation.count(filename + "_" + std::to_string(animIdx)) != 0) {
+				std::cerr << "There's " << filename << " animation already" << std::endl;
 				continue;
 			}
 			const aiAnimation* anim = scene->mAnimations[animIdx];
@@ -162,14 +181,22 @@ private:
 				}
 			}
 			animations.push_back(std::move(animation));
-			findAnimation[filename + "_" + to_string(animIdx)] = static_cast<int>(animations.size()) - 1;
+			findAnimation[filename + "_" + std::to_string(animIdx)] = static_cast<int>(animations.size()) - 1;
 			putCount++;
 		}
 		return putCount;
 	}
 
 public:
-	FBXModel() : Model() {}
+	FBXModel() {
+		material.shininess = 32.f;
+		material.useDiffuseMap = false;
+		material.useSpecularMap = false;
+
+		material.defaultAmbient = glm::vec3(1.0f, 1.0f, 1.0f);
+		material.defaultDiffuse = glm::vec3(1.0f, 1.0f, 1.0f);
+		material.defaultSpecular = glm::vec3(0.0f, 0.0f, 0.0f);
+	}
 
 	~FBXModel()
 	{
@@ -188,7 +215,7 @@ public:
 		glDeleteBuffers(1, &SSBOId);
 	}
 
-	void init() override {
+	void init() {
 		for (int i = 0; i < meshesVAO.size(); i++)
 		{
 			glGenVertexArrays(1, &meshesVAO[i]);
@@ -204,10 +231,12 @@ public:
 		glGenBuffers(1, &SSBOId);
 	}
 
+	
+
 	// TODO: change into Universal code.
 	// Refactoring plan: Change to texfile const string& and save size also
 	// for safety, need to be changed to for context
-	bool loadDiffuseMap(const char* texFile) override
+	bool loadDiffuseMap(const char* texFile)
 	{
 		loadTextureFile(meshesTexture[0], "Subpe_Redhood__head_BaseColor.png");
 		loadTextureFile(meshesTexture[1], "Subpe_Redhood__Cloths_BaseColor.png");
@@ -216,11 +245,11 @@ public:
 		loadTextureFile(meshesTexture[4], "Subpe_Redhood__Cloths_BaseColor.png");
 		loadTextureFile(meshesTexture[5], "Subpe_Redhood__head_BaseColor.png");
 
-		useDiffuseMap = true;
+		material.useDiffuseMap = true;
 		return true;
 	}
 
-	void loadFBX(string objectFileName, vector<string> animationFileName) override
+	void loadFBX(std::string objectFileName, std::vector<std::string> animationFileName)
 	{
 		Assimp::Importer objectImporter;
 		Assimp::Importer animationImporter;
@@ -237,11 +266,11 @@ public:
 		const aiScene* scene = objectImporter.ReadFile(objectFileName.c_str(), flags);
 		if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode)
 		{
-			cerr << "FBX Object Import Error: " << objectImporter.GetErrorString() << std::endl;
+			std::cerr << "FBX Object Import Error: " << objectImporter.GetErrorString() << std::endl;
 			return;
 		}
 
-		std::unordered_map<string, int> nameToNodeId;
+		std::unordered_map<std::string, int> nameToNodeId;
 
 		//refactor: Bone data saving(from scene)
 		nodes.clear();
@@ -259,11 +288,11 @@ public:
 		for (unsigned int meshIdx = 0; meshIdx < scene->mNumMeshes; meshIdx++)
 		{
 			const aiMesh* mesh = scene->mMeshes[meshIdx];
-			vector<glm::vec3> tmpPositions;
-			vector<glm::vec2> tmpTexCoords;
-			vector<glm::vec3> tmpNormals;
-			vector<GLuint> tmpVIndices;
-			vector<VertexJointWeights> tmpBoneData;
+			std::vector<glm::vec3> tmpPositions;
+			std::vector<glm::vec2> tmpTexCoords;
+			std::vector<glm::vec3> tmpNormals;
+			std::vector<GLuint> tmpVIndices;
+			std::vector<VertexJointWeights> tmpBoneData;
 
 			//cout << mesh->mName.C_Str() << std::endl;
 			//collect vertex information
@@ -388,25 +417,25 @@ public:
 		}
 
 		//make space for each draw call's skinning calculation val
-		meshSkinningMatrices.assign(meshSkins.size(), vector<glm::mat4>());
+		meshSkinningMatrices.assign(meshSkins.size(), std::vector<glm::mat4>());
 		for (int i = 0; i < meshSkins.size(); i++) {
 			meshSkinningMatrices[i].assign(meshSkins[i].inverseBindMatrices.size(), glm::mat4(1.0f));
 		}
 
 
 		//Collect Animation informaiton from FBX Bone file
-		if (loadAnimation(scene, objectFileName) == 0) cerr << objectFileName << " : No animation found" << endl;
+		if (loadAnimation(scene, objectFileName) == 0) std::cerr << objectFileName << " : No animation found" << std::endl;
 
 		// ..from Another Animation file
 		for (int fileCount = 0; fileCount < animationFileName.size(); fileCount++) {
 			const aiScene* animScene = animationImporter.ReadFile(animationFileName[fileCount].c_str(), flags);
 			if (!animScene)
 			{
-				cerr << animationFileName[fileCount] << " : Animation Import Error: " << animationImporter.GetErrorString() << std::endl;
+				std::cerr << animationFileName[fileCount] << " : Animation Import Error: " << animationImporter.GetErrorString() << std::endl;
 				continue;
 			}
 			if (loadAnimation(animScene, animationFileName[fileCount]) == 0) {
-				cerr << animationFileName[fileCount] << " : No animation found" << endl;
+				std::cerr << animationFileName[fileCount] << " : No animation found" << std::endl;
 			}
 		}
 
@@ -430,7 +459,7 @@ public:
 		}
 	}
 
-	void setModelMatrices(const vector<glm::mat4>& matrices) {
+	void setModelMatrices(const std::vector<glm::mat4>& matrices) {
 		glBindBuffer(GL_SHADER_STORAGE_BUFFER, SSBOId);
 		modelAmount = static_cast<int>(matrices.size());
 		glBufferData(GL_SHADER_STORAGE_BUFFER, modelAmount * sizeof(glm::mat4), nullptr, GL_DYNAMIC_DRAW);
@@ -438,13 +467,13 @@ public:
 		glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
 	}
 
-	void draw(GLuint _shaderID, double currentTime) override {
+	void draw(GLuint _shaderID, double currentTime) {
 		if (_shaderID != shaderInfo.shaderId) setShaderInfo(_shaderID);
-		glUniform3fv(shaderInfo.ulDefaultAmbient, 1, glm::value_ptr(defaultAmbient));
-		glUniform3fv(shaderInfo.ulDefaultDiffuse, 1, glm::value_ptr(defaultDiffuse));
-		glUniform3fv(shaderInfo.ulDefaultSpecular, 1, glm::value_ptr(defaultSpecular));
-		glUniform1i(shaderInfo.ulUseDiffuseMap, (int)useDiffuseMap);
-		glUniform1i(shaderInfo.ulUseSpecularMap, (int)useSpecularMap);
+		glUniform3fv(shaderInfo.ulDefaultAmbient, 1, glm::value_ptr(material.defaultAmbient));
+		glUniform3fv(shaderInfo.ulDefaultDiffuse, 1, glm::value_ptr(material.defaultDiffuse));
+		glUniform3fv(shaderInfo.ulDefaultSpecular, 1, glm::value_ptr(material.defaultSpecular));
+		glUniform1i(shaderInfo.ulUseDiffuseMap, static_cast<int>(material.useDiffuseMap));
+		glUniform1i(shaderInfo.ulUseSpecularMap, static_cast<int>(material.useSpecularMap));
 		for (int i = 0; i < meshesVAO.size(); i++)
 		{
 			//Setting UBO offset
@@ -455,9 +484,9 @@ public:
 			glBindBuffer(GL_UNIFORM_BUFFER, 0);
 
 			glUniform1i(shaderInfo.ulUseNormal, (int)normalMesh[i].size());
-			glUniform1f(shaderInfo.ulShininess, shininess);
+			glUniform1f(shaderInfo.ulShininess, material.shininess);
 
-			if (useDiffuseMap) {
+			if (material.useDiffuseMap) {
 				glUniform1i(shaderInfo.ulDiffuse, i);
 				glActiveTexture(GL_TEXTURE0 + i);
 				glBindTexture(GL_TEXTURE_2D, meshesTexture[i]);
@@ -473,7 +502,7 @@ public:
 
 	}
 
-	void setCurrentAnimationId(string animationName, double currentTime) override{
+	void setCurrentAnimationId(std::string animationName, double currentTime) {
 		auto it = findAnimation.find(animationName);
 		if (it != findAnimation.end()) {
 			if (currentAnimationId != it->second) {
@@ -486,8 +515,7 @@ public:
 	}
 
 protected:
-	void prepareBuffers() override
-	{
+	void prepareBuffers() {
 		for (int i = 0; i < meshesVAO.size(); i++)
 		{
 			glBindVertexArray(meshesVAO[i]);
@@ -514,8 +542,8 @@ protected:
 
 			if (!jointWeightsMesh[i].empty())
 			{
-				vector<glm::ivec4> boneIndicesPerVertex;
-				vector<glm::vec4> boneWeightsPerVertex;
+				std::vector<glm::ivec4> boneIndicesPerVertex;
+				std::vector<glm::vec4> boneWeightsPerVertex;
 
 				boneIndicesPerVertex.reserve(jointWeightsMesh[i].size());
 				boneWeightsPerVertex.reserve(jointWeightsMesh[i].size());
@@ -573,7 +601,7 @@ protected:
 
 private:
 	void updatePose(double lastAnimTick, double currentAnimTick, double w) {
-		w = clamp(w, 0.0, 1.0);
+		w = std::clamp(w, 0.0, 1.0);
 		for (int nodeIdx = 0; nodeIdx < nodes.size(); nodeIdx++) {
 			glm::mat4 localNodeTransform;
 			glm::vec3 currentT, currentS, lastT,  lastS;
@@ -668,7 +696,7 @@ private:
 		return result;
 	}
 
-	glm::vec3 pickKey(const vector<Animation::Channel::VectorKey>& keys, double tickTime) {
+	glm::vec3 pickKey(const std::vector<Animation::Channel::VectorKey>& keys, double tickTime) {
 		if (tickTime > keys[keys.size() - 1].time) return keys[keys.size() - 1].value;
 		else if (tickTime < keys[0].time) return keys[0].value;
 		if (keys.size() == 1) {
@@ -685,7 +713,7 @@ private:
 		return glm::mix(keys[left].value, keys[right].value, static_cast<float>(portion));
 	}
 
-	glm::quat pickKey(const vector<Animation::Channel::QuaternionKey>& keys, double tickTime) {
+	glm::quat pickKey(const std::vector<Animation::Channel::QuaternionKey>& keys, double tickTime) {
 		if (tickTime > keys[keys.size() - 1].time) return keys[keys.size() - 1].value;
 		else if (tickTime < keys[0].time) return keys[0].value;
 		if (keys.size() == 1) {

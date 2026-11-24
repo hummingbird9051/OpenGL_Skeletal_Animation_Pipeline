@@ -169,6 +169,7 @@
     <ClCompile Include="..\extern\imgui\imgui_widgets.cpp" />
     <ClCompile Include="GPUProfiler.cpp" />
     <ClCompile Include="CPUProfiler.cpp" />
+    <ClCompile Include="Texture.cpp" />
     <ClCompile Include="_myApp_.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
@@ -191,10 +192,12 @@
   <ItemGroup>
     <ClInclude Include="FBXModel.h" />
     <ClInclude Include="GPUProfiler.h" />
+    <ClInclude Include="Material.h" />
     <ClInclude Include="Model.h" />
     <ClInclude Include="PostProcessing.h" />
     <ClInclude Include="CPUProfiler.h" />
     <ClInclude Include="stb_image.h" />
+    <ClInclude Include="Texture.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

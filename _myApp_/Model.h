@@ -23,8 +23,8 @@
 #include<assimp/mesh.h>
 #include<assimp/material.h>
 
-#define STB_IMAGE_IMPLEMENTATION
-#include "stb_image.h"
+#include "Texture.h"
+#include "Material.h"
 
 
 struct BoneInfo
@@ -41,16 +41,14 @@ public:
 	std::vector<GLuint> vIndices;
 
 	GLuint diffuseMap = 0, specularMap = 0;
-	float shininess = 0.0f;
-	glm::vec3 defaultAmbient = glm::vec3(1.0f), defaultDiffuse = glm::vec3(1.0f), defaultSpecular = glm::vec3(1.0f);
+
+	Material material;
 
 private:
 	GLuint VAO = 0;
 	GLuint VBO_positions = 0, VBO_texCoords = 0, VBO_normals = 0;
 	GLuint EBO = 0;
 
-protected:
-	bool useDiffuseMap = false, useSpecularMap = false;
 
 
 public:
@@ -59,18 +57,18 @@ public:
 	// Refactoring plan: Merge init() into the constructor to apply RAII pattern.
 	// IMPORTANT: Ensure the model object is instantiated ONLY AFTER the GLFW OpenGL context is fully created.
 	Model() {
-		shininess = 32.f;
-		useDiffuseMap = false;
-		useSpecularMap = false;
+		material.shininess = 32.f;
+		material.useDiffuseMap = false;
+		material.useSpecularMap = false;
 
-		defaultAmbient = glm::vec3(1.0f, 1.0f, 1.0f);
-		defaultDiffuse = glm::vec3(1.0f, 1.0f, 1.0f);
-		defaultSpecular = glm::vec3(0.0f, 0.0f, 0.0f);
+		material.defaultAmbient = glm::vec3(1.0f, 1.0f, 1.0f);
+		material.defaultDiffuse = glm::vec3(1.0f, 1.0f, 1.0f);
+		material.defaultSpecular = glm::vec3(0.0f, 0.0f, 0.0f);
 		// TODO: [Dependency] Remove sb7 legacy math library (vmath::vec3).
 		// Replace all vmath occurrences with industry-standard GLM (glm::vec3).
 	}
 	// 소멸자
-	virtual ~Model() {
+	~Model() {
 		glDeleteTextures(1, &diffuseMap);
 		glDeleteTextures(1, &specularMap);
 
@@ -81,7 +79,7 @@ public:
 		glDeleteVertexArrays(1, &VAO);
 	}
 
-	virtual void init() {
+	void init() {
 		glGenVertexArrays(1, &VAO);
 		glGenBuffers(1, &VBO_positions);
 		glGenBuffers(1, &VBO_texCoords);
@@ -138,46 +136,46 @@ public:
 		glBindVertexArray(0);
 	}
 
-	virtual bool loadDiffuseMap(const char* _filepath) {
+	bool loadDiffuseMap(const char* _filepath) {
 		if (loadTextureFile(diffuseMap, _filepath)) {
-			useDiffuseMap = true;
+			material.useDiffuseMap = true;
 			return true;
 		}
 
-		useDiffuseMap = false;
+		material.useDiffuseMap = false;
 		return false;
 	}
 
 	bool loadSpecularMap(const char* _filepath) {
 		if (loadTextureFile(specularMap, _filepath)) {
-			useSpecularMap = true;
+			material.useSpecularMap = true;
 			return true;
 		}
 
-		useSpecularMap = false;
+		material.useSpecularMap = false;
 		return false;
 	}
 
-	virtual void draw(GLuint _shaderID, double currentTime) {
+	void draw(GLuint _shaderID, double currentTime) {
 		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-		glUniform3fv(glGetUniformLocation(_shaderID, "material.defaultAmbient"), 1, glm::value_ptr(defaultAmbient));
-		glUniform3fv(glGetUniformLocation(_shaderID, "material.defaultDiffuse"), 1, glm::value_ptr(defaultDiffuse));
-		glUniform3fv(glGetUniformLocation(_shaderID, "material.defaultSpecular"), 1, glm::value_ptr(defaultSpecular));
-		glUniform1i(glGetUniformLocation(_shaderID, "material.useDiffuseMap"), static_cast<int>(useDiffuseMap));
-		glUniform1i(glGetUniformLocation(_shaderID, "material.useSpecularMap"), static_cast<int>(useSpecularMap));
+		glUniform3fv(glGetUniformLocation(_shaderID, "material.defaultAmbient"), 1, glm::value_ptr(material.defaultAmbient));
+		glUniform3fv(glGetUniformLocation(_shaderID, "material.defaultDiffuse"), 1, glm::value_ptr(material.defaultDiffuse));
+		glUniform3fv(glGetUniformLocation(_shaderID, "material.defaultSpecular"), 1, glm::value_ptr(material.defaultSpecular));
+		glUniform1i(glGetUniformLocation(_shaderID, "material.useDiffuseMap"), static_cast<int>(material.useDiffuseMap));
+		glUniform1i(glGetUniformLocation(_shaderID, "material.useSpecularMap"), static_cast<int>(material.useSpecularMap));
 
 		glUniform1i(glGetUniformLocation(_shaderID, "useNormal"), static_cast<int>(vNormals.size()));
-		glUniform1f(glGetUniformLocation(_shaderID, "material.shininess"), shininess);
+		glUniform1f(glGetUniformLocation(_shaderID, "material.shininess"), material.shininess);
 		//Solve CPU bottle-neck.
 
 
-		if (useDiffuseMap) {
+		if (material.useDiffuseMap) {
 			glUniform1i(glGetUniformLocation(_shaderID, "material.diffuse"), 0);
 			glActiveTexture(GL_TEXTURE0);
 			glBindTexture(GL_TEXTURE_2D, diffuseMap);
 		}
 
-		if (useSpecularMap) {
+		if (material.useSpecularMap) {
 			glUniform1i(glGetUniformLocation(_shaderID, "material.specular"), 1);
 			glActiveTexture(GL_TEXTURE1);
 			glBindTexture(GL_TEXTURE_2D, specularMap);
@@ -196,12 +194,9 @@ public:
 	// Refactoring plan: Upgrade to C++17 std::string_view (or const std::string&) 
 	// for better memory safety and performance. Use .c_str() only when 
 	// interfacing with C-API boundaries like fopen() or Assimp.
-	virtual void loadFBX(std::string objectFileName, std::vector<std::string> animationFileName) {}
-
-	virtual void setCurrentAnimationId(std::string animationName, double currentTime) {}
 
 protected:
-	virtual void prepareBuffers() {
+	void prepareBuffers() {
 		glBindVertexArray(VAO);
 
 		glBindBuffer(GL_ARRAY_BUFFER, VBO_positions);
@@ -225,37 +220,6 @@ protected:
 
 		glBindBuffer(GL_ARRAY_BUFFER, 0);
 		glBindVertexArray(0);
-	}
-
-	bool loadTextureFile(GLuint textureID, const char* filepath) {
-		int width, height, nrChannels;
-		unsigned char* data = stbi_load(filepath, &width, &height, &nrChannels, 0);
-
-		if (data) {
-			GLenum format = 0;
-			if (nrChannels == 1)
-				format = GL_RED;
-			else if (nrChannels == 3) // R, G, B (ex. jpg)
-				format = GL_RGB;
-			else if (nrChannels == 4) // PNG
-				format = GL_RGBA;
-
-			glBindTexture(GL_TEXTURE_2D, textureID);
-
-			glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format, GL_UNSIGNED_BYTE, data);
-			glGenerateMipmap(GL_TEXTURE_2D);
-
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-			stbi_image_free(data);
-			return true;
-		}
-
-		stbi_image_free(data);
-		return false;
 	}
 
 };

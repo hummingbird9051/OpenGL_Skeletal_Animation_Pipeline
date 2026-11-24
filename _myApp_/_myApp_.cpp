@@ -10,11 +10,11 @@
 #include "imgui.h"
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
+#include "Model.h"
 #include "FBXModel.h"
 #include "PostProcessing.h"
 
 using namespace std;
-
 
 static void glfwErrorCallback(int error, const char* description) {
 	cerr << "GLFW error" << error << ": " << description << endl;
@@ -133,7 +133,6 @@ public:
 		post->initScreen();
 		post->initFrameBuffer(static_cast<int>(info.windowWidth), static_cast<int>(info.windowHeight));
 
-		stbi_set_flip_vertically_on_load(true); // Do NOT convert this we need to use stb_image.h
 
 		// 첫 번째 객체 정의 : OBJ 모델  --------------------------------------------------
 		objModel->init();

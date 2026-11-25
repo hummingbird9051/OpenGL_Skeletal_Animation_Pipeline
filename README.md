@@ -22,7 +22,9 @@ Bone is per character in baseline-v2 and per frame in final.
 
 Memory: peak during load went from 819 MB to 501 MB (Debug, v0-university → final).
 
-<!-- Demo video: drag the mp4 into the GitHub editor here and it will be uploaded and linked. -->
+https://github.com/user-attachments/assets/67202495-d9de-4bb5-aaff-011619fcecda
+
+
 
 ## 3. Measuring method
 

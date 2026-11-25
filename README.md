@@ -39,8 +39,10 @@ https://github.com/user-attachments/assets/67202495-d9de-4bb5-aaff-011619fcecda
 - laptop on AC power
 - warmup excluded
 - other programs closed
-- GPU Model : NVIDIA GeForce RTX 3060 Laptop GPU
-- Driver version : 32.0.15.9174
+- CPU Model : AMD Ryzen 9 5900HS
+- GPU Model : AMD Radeon(TM) Graphics (integrated GPU of the Ryzen 9 5900HS)
+- RAM : 32.0GB DDR4
+- Driver version : 31.0.12014.6
 
 **Labels**
 

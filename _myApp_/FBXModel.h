@@ -144,7 +144,4 @@ private:
 
 	int saveNodes(const aiNode* cur, int parentInfo);
 	
-	glm::vec3 pickKey(const std::vector<Animation::Channel::VectorKey>& keys, double tickTime);
-
-	glm::quat pickKey(const std::vector<Animation::Channel::QuaternionKey>& keys, double tickTime);
 };

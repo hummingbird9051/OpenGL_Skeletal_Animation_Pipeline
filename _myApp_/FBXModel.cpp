@@ -2,6 +2,7 @@
 #include<algorithm>
 #include<iostream>
 #include<filesystem>
+#include<type_traits>
 
 #define GLM_ENABLE_EXPERIMENTAL
 #include<glm/gtc/matrix_transform.hpp>
@@ -18,18 +19,46 @@
 #include "Material.h"
 #include "Texture.h"
 #define MAX_JOINTS 52 //Set the same as shader's MAX_JOINTS
-//ai matrices to glm matrices
-glm::mat4 aiMatToGlmMat(aiMatrix4x4 aiMat)
+
+namespace 
 {
-	glm::mat4 result;
-	for (int i = 0; i < 4; i++)
-	{
-		for (int j = 0; j < 4; j++)
-		{
-			result[j][i] = aiMat[i][j];
+	template<typename T>
+	auto pickKey(const T& keys, double tickTime, const decltype(T::value_type::value)& fallback) {
+		if (keys.empty()) return fallback;
+		if (tickTime > keys[keys.size() - 1].time) return keys[keys.size() - 1].value;
+		else if (tickTime < keys[0].time) return keys[0].value;
+
+		if (keys.size() == 1) return keys[0].value;
+		int left = 0;
+		int right = static_cast<int>(keys.size()) - 1;
+		while ((left + 1 <= keys.size() - 1 && right - 1 >= 0) && right - left != 1) {
+			if (keys[left + 1].time <= tickTime) left++;
+			if (keys[right - 1].time > tickTime) right--;
+		}
+
+		double portion = (tickTime - keys[left].time) / (keys[right].time - keys[left].time);
+		if constexpr (std::is_same<decltype(keys[0].value), glm::vec3>::value) {
+			return glm::mix(keys[left].value, keys[right].value, static_cast<float>(portion));
+		}
+		else {
+			return glm::slerp(keys[left].value, keys[right].value, static_cast<float>(portion));
 		}
 	}
-	return result;
+
+
+	//ai matrices to glm matrices
+	glm::mat4 aiMatToGlmMat(aiMatrix4x4 aiMat)
+	{
+		glm::mat4 result;
+		for (int i = 0; i < 4; i++)
+		{
+			for (int j = 0; j < 4; j++)
+			{
+				result[j][i] = aiMat[i][j];
+			}
+		}
+		return result;
+	}
 }
 
 int FBXModel::loadAnimation(const aiScene* scene, const std::string& originalFileName) {
@@ -169,7 +198,7 @@ void FBXModel::loadFBX(const std::string& objectFileName, const std::vector<std:
 
 	std::unordered_map<std::string, int> nameToNodeId;
 
-	//refactor: Bone data saving(from scene)
+	//Save the node tree
 	nodes.clear();
 	saveNodes(scene->mRootNode, -1);
 	aiMatrix4x4 invRootTransformAssimp = scene->mRootNode->mTransformation;
@@ -246,7 +275,7 @@ void FBXModel::loadFBX(const std::string& objectFileName, const std::vector<std:
 		tempJointFromMesh.inverseBindMatrices.assign(mesh->mNumBones, glm::mat4(1.0f));
 
 		if (mesh->mNumBones > MAX_JOINTS) {
-			std::cerr << "Over maximum joints amount. please adjust maxumum joints amount" << std::endl;
+			std::cerr << "Over maximum joints amount. please adjust maximum joints amount" << std::endl;
 		}
 
 		for (unsigned int jointIdx = 0; jointIdx < mesh->mNumBones; jointIdx++)
@@ -259,7 +288,7 @@ void FBXModel::loadFBX(const std::string& objectFileName, const std::vector<std:
 				tempJointFromMesh.inverseBindMatrices[jointIdx] = aiMatToGlmMat(aiJoint->mOffsetMatrix);
 			}
 			else {
-				std::cerr << "Can't find the joint's name" << aiJoint->mName.C_Str() << std::endl;
+				std::cerr << "Can't find the joint's name : " << aiJoint->mName.C_Str() << std::endl;
 			}
 
 			for (unsigned int id = 0; id < aiJoint->mNumWeights; id++) {
@@ -506,9 +535,9 @@ void FBXModel::updatePose(double lastAnimTick, double currentAnimTick, double w)
 		int currentId = animations[currentAnimationId].nodeToChannel[nodeIdx];
 		if (currentId != -1) {
 			const Animation::Channel& channel = animations[currentAnimationId].channels[currentId];
-			currentT = pickKey(channel.positionKeys, currentAnimTick);
-			currentR = pickKey(channel.rotationKeys, currentAnimTick);
-			currentS = pickKey(channel.scalingKeys, currentAnimTick);
+			currentT = pickKey(channel.positionKeys, currentAnimTick, nodes[nodeIdx].translate);
+			currentR = pickKey(channel.rotationKeys, currentAnimTick, nodes[nodeIdx].rotate);
+			currentS = pickKey(channel.scalingKeys, currentAnimTick, nodes[nodeIdx].scale);
 		}
 		else {
 			currentT = nodes[nodeIdx].translate;
@@ -522,9 +551,9 @@ void FBXModel::updatePose(double lastAnimTick, double currentAnimTick, double w)
 			int lastId = animations[lastAnimationId].nodeToChannel[nodeIdx];
 			if (lastId != -1) {
 				const Animation::Channel& lastCh = animations[lastAnimationId].channels[lastId];
-				lastT = pickKey(lastCh.positionKeys, lastAnimTick);
-				lastR = pickKey(lastCh.rotationKeys, lastAnimTick);
-				lastS = pickKey(lastCh.scalingKeys, lastAnimTick);
+				lastT = pickKey(lastCh.positionKeys, lastAnimTick, nodes[nodeIdx].translate);
+				lastR = pickKey(lastCh.rotationKeys, lastAnimTick, nodes[nodeIdx].rotate);
+				lastS = pickKey(lastCh.scalingKeys, lastAnimTick, nodes[nodeIdx].scale);
 			}
 			else {
 				lastT = nodes[nodeIdx].translate;
@@ -575,39 +604,5 @@ int FBXModel::saveNodes(const aiNode* cur, int parentInfo) {
 		if (childrenInfo >= 0) nodes[currInfo].children.push_back(childrenInfo);
 	}
 	return currInfo;
-}
-
-glm::vec3 FBXModel::pickKey(const std::vector<Animation::Channel::VectorKey>& keys, double tickTime) {
-	if (tickTime > keys[keys.size() - 1].time) return keys[keys.size() - 1].value;
-	else if (tickTime < keys[0].time) return keys[0].value;
-	if (keys.size() == 1) {
-		return keys[0].value;
-	}
-	int left = 0;
-	int right = static_cast<int>(keys.size()) - 1;
-	while ((left + 1 <= keys.size() - 1 && right - 1 >= 0) && (right - left != 1)) {
-		if (keys[left + 1].time <= tickTime) left++;
-		if (keys[right - 1].time > tickTime) right--;
-	}
-
-	double portion = (tickTime - keys[left].time) / (keys[right].time - keys[left].time);
-	return glm::mix(keys[left].value, keys[right].value, static_cast<float>(portion));
-}
-
-glm::quat FBXModel::pickKey(const std::vector<Animation::Channel::QuaternionKey>& keys, double tickTime) {
-	if (tickTime > keys[keys.size() - 1].time) return keys[keys.size() - 1].value;
-	else if (tickTime < keys[0].time) return keys[0].value;
-	if (keys.size() == 1) {
-		return keys[0].value;
-	}
-	int left = 0;
-	int right = static_cast<int>(keys.size()) - 1;
-	while ((left + 1 <= keys.size() - 1 && right - 1 >= 0) && right - left != 1) {
-		if (keys[left + 1].time <= tickTime) left++;
-		if (keys[right - 1].time > tickTime) right--;
-	}
-
-	double portion = (tickTime - keys[left].time) / (keys[right].time - keys[left].time);
-	return glm::slerp(keys[left].value, keys[right].value, static_cast<float>(portion));
 }
 

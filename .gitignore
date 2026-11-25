@@ -21,3 +21,7 @@ Release/
 
 # Ignore imgui.ini file(different each computer settings)
 imgui.ini
+
+assets/anim/Walking.fbx
+assets/anim/Idle.fbx
+assets/anim/Walking_60fps.fbx

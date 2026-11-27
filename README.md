@@ -24,6 +24,9 @@ Memory: peak during load went from 819 MB to 501 MB (Debug, v0-university → fi
 
 https://github.com/user-attachments/assets/67202495-d9de-4bb5-aaff-011619fcecda
 
+On the discrete GPU (same final build, 11/27): Frame 0.87 ms, GPU 0.41 ms.
+All other results in this README were measured on the integrated GPU.
+On the discrete GPU, the frame is no longer limited by GPU time. Most of the frame is spent in glfwSwapBuffers, probably copying the image to the display on a hybrid laptop (my guess).
 
 
 ## 3. Measuring method
@@ -40,7 +43,9 @@ https://github.com/user-attachments/assets/67202495-d9de-4bb5-aaff-011619fcecda
 - warmup excluded
 - other programs closed
 - CPU Model : AMD Ryzen 9 5900HS
-- GPU Model : AMD Radeon(TM) Graphics (integrated GPU of the Ryzen 9 5900HS)
+- GPU Model (**Measurements use the integrated GPU unless noted.**)
+  - AMD Radeon(TM) Graphics (integrated GPU of the Ryzen 9 5900HS)
+  - NVIDIA GeForce RTX 3060 Laptop GPU (discrete GPU)
 - RAM : 32.0GB DDR4
 - Driver version : 31.0.12014.6
 
